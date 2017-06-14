@@ -80,6 +80,24 @@ def load_topic_info(fp):
     return tid_list, father_list, tc_list, tw_list, dc_list, dw_list
 
 
+def load_question_topic_set(fp):
+    """
+    load file `question_topic_train_set.txt`
+    :param fp:
+    :return:
+    """
+    qid_list = []
+    tid_list = []
+
+    f = open(fp)
+    for line in f:
+        subs = line.strip().split()
+        qid_list.append(subs[0])
+        tid_list.append(subs[1].split(','))
+    f.close()
+    return qid_list, tid_list
+
+
 def _test_load_question_set(cf):
     q_train_set = cf.get('DEFAULT', 'source_pt') + '/question_train_set.txt.small'
 

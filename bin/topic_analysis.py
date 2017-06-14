@@ -9,7 +9,7 @@ def count_topic(topic_mat):
     topic_cnt = {}
     for vec in topic_mat:
         for tid in vec:
-            topic_cnt[tid] = topic_cnt.get(tid, 0.)
+            topic_cnt[tid] = topic_cnt.get(tid, 0.) + 1.
     return topic_cnt
 
 

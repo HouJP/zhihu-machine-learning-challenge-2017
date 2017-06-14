@@ -16,7 +16,7 @@ def save_question_topic_info(cf):
     q_eval_set = cf.get('DEFAULT', 'source_pt') + '/question_eval_set.txt'
     (qid_eval_list, tc_eval_list, tw_eval_list, dc_eval_list, dw_eval_list) = data_utils.load_question_set(q_eval_set)
 
-    q_topic_set = cf.get('DEFAULT', 'source_pt') + '/topic_info.txt.small'
+    q_topic_set = cf.get('DEFAULT', 'source_pt') + '/topic_info.txt'
     (tid_topic_list, father_topic_list, tc_topic_list, tw_topic_list, dc_topic_list, dw_topic_list) = data_utils.load_topic_info(q_topic_set)
 
     btm_qt_info_fp = cf.get('DEFAULT', 'devel_pt') + '/btm_qt_info.txt'

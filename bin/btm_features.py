@@ -7,6 +7,7 @@
 
 import ConfigParser
 import data_utils
+import logging
 
 
 def save_question_topic_info(cf):
@@ -22,11 +23,23 @@ def save_question_topic_info(cf):
     btm_qt_info_fp = cf.get('DEFAULT', 'devel_pt') + '/btm_qt_info.txt'
     f = open(btm_qt_info_fp, 'w')
     for i in range(len(qid_train_list)):
-        f.write(' '.join((tw_train_list[i] + dw_train_list[i])) + '\n')
+        s = ' '.join((tw_train_list[i] + dw_train_list[i])) + '\n'
+        if 0 == s.strip():
+            logging.warn('question_train_set.txt has no content at line#%d' % i)
+            s = 'empty\n'
+        f.write(s)
     for i in range(len(qid_eval_list)):
-        f.write(' '.join((tw_eval_list[i] + dw_eval_list[i])) + '\n')
+        s = ' '.join((tw_eval_list[i] + dw_eval_list[i])) + '\n'
+        if 0 == s.strip():
+            logging.warn('question_eval_set.txt has no content at line#%d' % i)
+            s = 'empty\n'
+        f.write(s)
     for i in range(len(tid_topic_list)):
-        f.write(' '.join((tw_topic_list[i] + dw_topic_list[i])) + '\n')
+        s = ' '.join((tw_topic_list[i] + dw_topic_list[i])) + '\n'
+        if 0 == s.strip():
+            logging.warn('topic_info.txt has no content at line#%d' % i)
+            s = 'empty\n'
+        f.write(s)
     f.close()
 
 

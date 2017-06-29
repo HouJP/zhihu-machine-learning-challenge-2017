@@ -103,26 +103,26 @@ def train(embedding_matrix, title_x_val, cont_x_val, y_val):
     title_sequence_input = embedding_layer(title_input)
     cont_sequence_input = embedding_layer(cont_input)
 
-    title_win_2 = Conv1D(128,2,activation='relu',border_mode='same')(title_sequence_input)
-    title_win_3 = Conv1D(128,3,activation='relu',border_mode='same')(title_sequence_input)
-    title_win_4 = Conv1D(128,4,activation='relu',border_mode='same')(title_sequence_input)
-    title_win_5 = Conv1D(128,5,activation='relu',border_mode='same')(title_sequence_input)
+    title_win_2 = Conv1D(100,2,activation='relu',border_mode='same')(title_sequence_input)
+    title_win_3 = Conv1D(100,3,activation='relu',border_mode='same')(title_sequence_input)
+    title_win_4 = Conv1D(100,4,activation='relu',border_mode='same')(title_sequence_input)
+    title_win_5 = Conv1D(100,5,activation='relu',border_mode='same')(title_sequence_input)
 
     title_x = merge([title_win_2,title_win_3,title_win_4,title_win_5],mode='concat')
     title_x = GlobalMaxPooling1D()(title_x)
     
-    cont_win_2 = Conv1D(128,2,activation='relu',border_mode='same')(cont_sequence_input)
-    cont_win_3 = Conv1D(128,3,activation='relu',border_mode='same')(cont_sequence_input)
-    cont_win_4 = Conv1D(128,4,activation='relu',border_mode='same')(cont_sequence_input)
-    cont_win_5 = Conv1D(128,5,activation='relu',border_mode='same')(cont_sequence_input)
+    cont_win_2 = Conv1D(100,2,activation='relu',border_mode='same')(cont_sequence_input)
+    cont_win_3 = Conv1D(100,3,activation='relu',border_mode='same')(cont_sequence_input)
+    cont_win_4 = Conv1D(100,4,activation='relu',border_mode='same')(cont_sequence_input)
+    cont_win_5 = Conv1D(100,5,activation='relu',border_mode='same')(cont_sequence_input)
 
     cont_x = merge([cont_win_2,cont_win_3,cont_win_4,cont_win_5],mode='concat')
     cont_x = GlobalMaxPooling1D()(cont_x)
     
     x = merge([title_x,cont_x],mode='concat')
-    x = Dense(1024,activation='relu')(x)
+    x = Dense(1000,activation='relu')(x)
     
-    preds = Dense(2048, activation='sigmoid')(x)
+    preds = Dense(2000, activation='sigmoid')(x)
     model = Model([title_input,cont_input], preds)
     model.compile(loss=binary_crossentropy_sum,\
             optimizer='rmsprop',\

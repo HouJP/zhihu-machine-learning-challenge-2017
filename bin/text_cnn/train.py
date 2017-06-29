@@ -14,7 +14,7 @@ import tensorflow as tf
 from tensorflow.contrib import learn
 
 import data_helpers
-from bin.text_cnn.text_cnn import TextCNN
+from text_cnn import TextCNN
 
 # Parameters
 # ==================================================

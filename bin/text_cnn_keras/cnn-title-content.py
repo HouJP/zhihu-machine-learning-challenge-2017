@@ -133,7 +133,7 @@ def train(embedding_matrix, title_x_val, cont_x_val, y_val):
     for (x1,x2,y) in generate_batch_from_file('%s/data/train_data/title_content_word.train.csv' % project_pt, epoch_sample):
         orde += 1
         print "Round " + str(orde) + " starts."
-        model_path = '%s/data/model/cnn.title-cont.sum.finetune.model-50w.h5.' % model + str(orde) + '.round'
+        model_path = '%s/data/model/cnn.title-cont.sum.finetune.model-50w.h5.' % project_pt + str(orde) + '.round'
         model_checkpoint = ModelCheckpoint(model_path, save_best_only=False, save_weights_only=False)
         model.fit([x1,x2], y, validation_data=( [title_x_val,cont_x_val] , y_val), epochs=1, batch_size=1280,callbacks=[model_checkpoint])
 

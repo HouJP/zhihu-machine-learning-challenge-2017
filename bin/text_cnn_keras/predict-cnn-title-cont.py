@@ -44,6 +44,7 @@ def predict(title_x_test, cont_x_test, qid, inverse_dic, bst_model_path, out_nam
     fout = open(out_name,'w')
     
     model = load_model(bst_model_path)
+    model.compile()
     print "Yesss"
     #model.summary()
     preds = model.predict([title_x_test,cont_x_test], batch_size=512, verbose=1)
@@ -80,13 +81,15 @@ def predict(title_x_test, cont_x_test, qid, inverse_dic, bst_model_path, out_nam
             print i,' passed.'
 
 if __name__ == '__main__':
-    embedding_index, embedding_matrix = loadEmbeddingFile('./../../Data/raw_data/ieee_zhihu_cup/word_embedding.txt')
+    project_pt = '/home/houjianpeng/zhihu-machine-learning-challenge-2017/'
+    embedding_index, embedding_matrix = loadEmbeddingFile('%s/data/devel/glove.vec.txt' % project_pt)
+    # embedding_index, embedding_matrix = loadEmbeddingFile('./../../Data/raw_data/ieee_zhihu_cup/word_embedding.txt')
     global index_dic 
     index_dic = embedding_index
-    title_x_test, cont_x_test, y_test, qid = load_validation('./../../Data/train_data/title_content_word.test.csv', embedding_index)
-    with open("./../../Kernal/Data/InverseHashLabel.dic", "r") as fin:
+    title_x_test, cont_x_test, y_test, qid = load_validation('./../../data/train_data/title_content_word.test.csv', embedding_index)
+    with open("/home/houjianpeng/zhihu-machine-learning-challenge-2017/data/devel/InverseHashLabel.dic", "r") as fin:
         inverse_dic = json.load(fin)
-    predict(title_x_test, cont_x_test, qid, inverse_dic, './model/cnn.title-cont.sum.finetune.model-50w.h5.38.round', "pred.csv")
+    predict(title_x_test, cont_x_test, qid, inverse_dic, '/home/houjianpeng/zhihu-machine-learning-challenge-2017/data/model/cnn.title-cont.sum.finetune.model-50w.h5.27qq.round', "pred.csv")
 
     #qid = load_test_qid('./ieee_zhihu_cup/question_eval_set.txt')
     #map_topic = load_map_topic('./ieee_zhihu_cup/map_topic.out')

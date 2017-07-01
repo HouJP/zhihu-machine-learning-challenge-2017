@@ -18,7 +18,7 @@ import os
 def init_out_dir(config):
     # generate output tag
     out_tag = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
-    config.set('DIRECTORY', str(out_tag))
+    config.set('DIRECTORY', 'out_tag', str(out_tag))
     # generate output directory
     out_pt = config.get('DIRECTORY', 'out_pt')
     out_pt_exists = os.path.exists(out_pt)

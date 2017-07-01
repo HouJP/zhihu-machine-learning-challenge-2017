@@ -95,7 +95,7 @@ def load_train(file_path, part_size, emb_index, size=200):
             _label_vec = [0] * 2000
             for label_id in part[3].split(','):
                 label_id = int(label_id)
-                assert label_id != 0, 'illegal label ID (0)'
+                assert label_id != 0, 'illegal label ID (0) at line (%d)' % count
                 _label_vec[label_id] = 1
 
             title_word = [emb_index[x] for x in part[1].split(',') if x in emb_index]
@@ -108,12 +108,11 @@ def load_train(file_path, part_size, emb_index, size=200):
             label_vec.append(_label_vec)
 
             count += 1
-            if count == part_size:
+            if 0 == count % part_size:
                 title_vec = np.asarray(title_vec, dtype='int32')
                 content_vec = np.asarray(content_vec, dtype='int32')
                 label_vec = np.asarray(label_vec, dtype='int32')
                 yield title_vec, content_vec, label_vec
-                count = 0
                 title_vec = []
                 content_vec = []
                 label_vec = []

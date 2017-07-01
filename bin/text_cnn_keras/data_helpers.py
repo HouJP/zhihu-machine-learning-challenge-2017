@@ -76,7 +76,7 @@ def load_valid(valid_fp, emb_index, size=200):
 
     LogUtil.log('INFO', 'title_x_val.shape=%s' % str(title_x_val.shape))
     LogUtil.log('INFO', 'cont_x_val.shape=%s' % str(cont_x_val.shape))
-    LogUtil.log('INFO', 'y_val.shape=%s' % y_val.shape)
+    LogUtil.log('INFO', 'y_val.shape=%s' % str(y_val.shape))
     return title_x_val, cont_x_val, y_val, qid
 
 

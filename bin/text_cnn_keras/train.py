@@ -24,7 +24,7 @@ def init_out_dir(config):
     out_pt_exists = os.path.exists(out_pt)
     if out_pt_exists:
         LogUtil.log("ERROR", 'out path (%s) already exists ' % out_pt)
-        return
+        raise Exception
     else:
         os.mkdir(out_pt)
         os.mkdir(config.get('DIRECTORY', 'pred_pt'))

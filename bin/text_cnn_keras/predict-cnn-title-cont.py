@@ -44,7 +44,10 @@ def predict(title_x_test, cont_x_test, qid, inverse_dic, bst_model_path, out_nam
     fout = open(out_name,'w')
     
     model = load_model(bst_model_path)
-    model.compile()
+
+    model.compile(loss=binary_crossentropy_sum, \
+              optimizer='rmsprop', \
+              metrics=['accuracy'])
     print "Yesss"
     #model.summary()
     preds = model.predict([title_x_test,cont_x_test], batch_size=512, verbose=1)

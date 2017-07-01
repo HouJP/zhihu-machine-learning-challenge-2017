@@ -74,8 +74,8 @@ def load_valid(valid_fp, emb_index, size=200):
     cont_x_val = np.asarray(cont_x_val, dtype='int32')
     y_val = np.asarray(y_val, dtype='int32')
 
-    LogUtil.log('INFO', 'title_x_val.shape=%s' % title_x_val.shape)
-    LogUtil.log('INFO', 'cont_x_val.shape=%s' % cont_x_val.shape)
+    LogUtil.log('INFO', 'title_x_val.shape=%s' % str(title_x_val.shape))
+    LogUtil.log('INFO', 'cont_x_val.shape=%s' % str(cont_x_val.shape))
     LogUtil.log('INFO', 'y_val.shape=%s' % y_val.shape)
     return title_x_val, cont_x_val, y_val, qid
 

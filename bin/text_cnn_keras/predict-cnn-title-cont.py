@@ -89,7 +89,7 @@ if __name__ == '__main__':
     title_x_test, cont_x_test, y_test, qid = load_validation('./../../data/train_data/title_content_word.test.csv', embedding_index)
     with open("/home/houjianpeng/zhihu-machine-learning-challenge-2017/data/devel/InverseHashLabel.dic", "r") as fin:
         inverse_dic = json.load(fin)
-    predict(title_x_test, cont_x_test, qid, inverse_dic, '/home/houjianpeng/zhihu-machine-learning-challenge-2017/data/model/cnn.title-cont.sum.finetune.model-50w.h5.27qq.round', "pred.csv")
+    predict(title_x_test, cont_x_test, qid, inverse_dic, '/home/houjianpeng/zhihu-machine-learning-challenge-2017/data/model/cnn.title-cont.sum.finetune.model-50w.h5.27.round', "pred.csv")
 
     #qid = load_test_qid('./ieee_zhihu_cup/question_eval_set.txt')
     #map_topic = load_map_topic('./ieee_zhihu_cup/map_topic.out')

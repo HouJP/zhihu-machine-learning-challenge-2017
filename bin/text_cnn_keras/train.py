@@ -51,7 +51,7 @@ def train(config):
 
     part_id = 0
     train_fp = '%s/data/train_data/title_content_word.train.csv' % project_pt
-    for title_vec_train, cont_vec_train, label_vec_train in load_train(train_fp, embedding_index, part_size):
+    for title_vec_train, cont_vec_train, label_vec_train in load_train(train_fp, part_size, embedding_index):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         model.fit([title_vec_train, cont_vec_train],
                   label_vec_train,

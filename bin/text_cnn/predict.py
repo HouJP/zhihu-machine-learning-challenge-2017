@@ -6,11 +6,12 @@
 
 
 import ConfigParser
-import sys
 import json
+import sys
+
+from bin.utils import LogUtil
 from data_helpers import load_embedding, load_dataset
 from text_cnn import TitleContentCNN
-from utils import LogUtil
 
 
 def save_prediction(pred_fp, preds, id2label, que_ids_test):

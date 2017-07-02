@@ -5,8 +5,9 @@
 # @Email   : houjp1992@gmail.com
 
 
-from utils import LogUtil
 import numpy as np
+
+from bin.utils import LogUtil
 
 
 def load_embedding(file_path):

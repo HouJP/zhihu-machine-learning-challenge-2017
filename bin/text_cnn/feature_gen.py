@@ -2,10 +2,8 @@
 # -*- coding:UTF-8 -*-
 
 import sys
-import time
-import numpy as np
-from utils import LogUtil
 
+import numpy as np
 
 reload(sys)
 sys.setdefaultencoding('utf8')

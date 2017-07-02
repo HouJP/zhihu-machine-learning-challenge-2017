@@ -5,7 +5,8 @@
 # @Email   : houjp1992@gmail.com
 
 import ConfigParser
-import logging
+from utils import DataUtil
+import sys
 
 
 def load_question_set(fp):
@@ -98,6 +99,16 @@ def load_question_topic_set(fp):
     return qid_list, tid_list
 
 
+def random_split_dataset(config):
+    all_fp = config.get('DIRECTORY', 'dataset_pt') + 'title_content_word.all.csv'
+    all = open(all_fp, 'r').readlines()
+    [train, valid] = DataUtil.random_split(all, [0.966, 0.034])
+    train_fp = config.get('DIRECTORY', 'dataset_pt') + 'title_content_word.train_996.csv'
+    valid_fp = config.get('DIRECTORY', 'dataset_pt') + 'title_content_word.valid_034.csv'
+    DataUtil.save_vector(train_fp, train, 'w')
+    DataUtil.save_vector(valid_fp, valid, 'w')
+
+
 def _test_load_question_set(cf):
     q_train_set = cf.get('DEFAULT', 'source_pt') + '/question_train_set.txt.small'
 
@@ -131,8 +142,13 @@ def _test():
 
 
 def main():
+    config_fp = sys.argv[1]
+    config = ConfigParser.ConfigParser()
+    config.read(config_fp)
+
+    random_split_dataset(config)
     pass
 
 if __name__ == '__main__':
-    _test()
-    # main()
+    # _test()
+    main()

@@ -1,25 +1,12 @@
 # !/usr/bin/python
 # -*- coding:UTF-8 -*-
 
-import sys
-import time
 import json
-import gc
-import numpy as np
-import pandas as pd
+import sys
 
-from keras import layers
-from keras.layers import Dense, Input, Flatten
-from keras.layers import Conv1D, MaxPooling1D,GlobalMaxPooling1D, Embedding,merge
-from keras.models import Model,load_model
-from keras.models import Sequential
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.utils.np_utils import to_categorical
 from keras import backend as K
+from keras.models import load_model
 
-from utils import LogUtil
 from feature_gen import loadEmbeddingFile, load_validation
 
 reload(sys)

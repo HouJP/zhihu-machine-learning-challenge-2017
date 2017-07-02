@@ -5,14 +5,15 @@
 # @Email   : houjp1992@gmail.com
 
 
-from data_helpers import load_embedding
-from data_helpers import load_dataset, load_dataset_loop
-from text_cnn import TitleContentCNN
-from utils import LogUtil
 import ConfigParser
+import os
 import sys
 import time
-import os
+
+from bin.utils import LogUtil
+from data_helpers import load_dataset, load_dataset_loop
+from data_helpers import load_embedding
+from text_cnn import TitleContentCNN
 
 
 def init_out_dir(config):

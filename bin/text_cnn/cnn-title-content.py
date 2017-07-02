@@ -2,23 +2,14 @@
 # -*- coding:UTF-8 -*-
 
 import sys
-import time
-import gc
+
 import numpy as np
-import pandas as pd
-
-from keras import layers
-from keras.layers import Dense, Input, Flatten
-from keras.layers import Conv1D, MaxPooling1D, GlobalMaxPooling1D, Embedding, merge
-from keras.models import Model
-from keras.models import Sequential
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.utils.np_utils import to_categorical
 from keras import backend as K
+from keras.callbacks import ModelCheckpoint
+from keras.layers import Conv1D, GlobalMaxPooling1D, Embedding, merge
+from keras.layers import Dense, Input
+from keras.models import Model
 
-from utils import LogUtil
 from feature_gen import loadEmbeddingFile, load_validation
 
 reload(sys)

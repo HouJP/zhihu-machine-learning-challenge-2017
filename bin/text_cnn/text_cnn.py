@@ -7,8 +7,9 @@
 
 from keras.layers import Dense, Input, Embedding, Conv1D, merge, GlobalMaxPooling1D
 from keras.models import Model, model_from_json
+
+from bin.utils import LogUtil
 from loss import binary_crossentropy_sum
-from utils import LogUtil
 
 
 class TitleContentCNN(object):

@@ -6,7 +6,7 @@
 
 
 from data_helpers import load_embedding
-from data_helpers import load_valid, load_train
+from data_helpers import load_dataset, load_dataset_loop
 from text_cnn import TitleContentCNN
 from utils import LogUtil
 import ConfigParser
@@ -50,19 +50,29 @@ def train(config):
                             class_num=class_num,
                             embedding_matrix=embedding_matrix)
 
-    title_vec_valid, cont_vec_valid, label_vec_valid, qid_valid = load_valid(
-        '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'valid_fn')), embedding_index, class_num)
+    title_vec_valid, cont_vec_valid, label_vec_valid, qid_valid = load_dataset(
+        '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'valid_fn')),
+        embedding_index,
+        class_num,
+        title_length,
+        content_length)
 
     part_id = 0
     part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
+    batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     train_fp = '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'train_fn'))
-    for title_vec_train, cont_vec_train, label_vec_train in load_train(train_fp, part_size, embedding_index, class_num):
+    for title_vec_train, cont_vec_train, label_vec_train in load_dataset_loop(train_fp,
+                                                                              part_size,
+                                                                              embedding_index,
+                                                                              class_num,
+                                                                              title_length,
+                                                                              content_length):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         model.fit([title_vec_train, cont_vec_train],
                   label_vec_train,
                   validation_data=([title_vec_valid, cont_vec_valid], label_vec_valid),
                   epochs=1,
-                  batch_size=1280)
+                  batch_size=batch_size)
         model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
         model.save(model_fp)
         part_id += 1

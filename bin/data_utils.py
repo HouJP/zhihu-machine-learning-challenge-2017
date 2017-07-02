@@ -101,8 +101,9 @@ def load_question_topic_set(fp):
 
 def random_split_dataset(config):
     all_fp = config.get('DIRECTORY', 'dataset_pt') + 'title_content_word.all.csv'
-    all = open(all_fp, 'r').readlines()
-    [train, valid] = DataUtil.random_split(all, [0.966, 0.034])
+    all_data = open(all_fp, 'r').readlines()
+    all_data = [line.strip('\n') for line in all_data]
+    [train, valid] = DataUtil.random_split(all_data, [0.966, 0.034])
     train_fp = config.get('DIRECTORY', 'dataset_pt') + 'title_content_word.train_996.csv'
     valid_fp = config.get('DIRECTORY', 'dataset_pt') + 'title_content_word.valid_034.csv'
     DataUtil.save_vector(train_fp, train, 'w')

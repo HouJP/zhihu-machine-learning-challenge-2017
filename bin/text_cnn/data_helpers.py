@@ -45,8 +45,9 @@ def parse_dataset_line(line, emb_index, class_num, title_length, content_length)
         else cont_vec[:content_length]
 
     label_vec = [0] * class_num
-    for label_id in part[3].split(','):
-        label_vec[int(label_id)] = 1
+    if 0 != len(part[3].strip()):
+        for label_id in part[3].split(','):
+            label_vec[int(label_id)] = 1
 
     return que_id, title_vec, cont_vec, label_vec
 

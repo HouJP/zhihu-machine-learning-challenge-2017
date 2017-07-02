@@ -5,7 +5,7 @@
 # @Email   : houjp1992@gmail.com
 
 
-from data_helpers import load_embedding_file
+from data_helpers import load_embedding
 from data_helpers import load_valid, load_train
 from text_cnn import TitleContentCNN
 from utils import LogUtil
@@ -38,20 +38,24 @@ def init_out_dir(config):
 
 def train(config):
     init_out_dir(config)
-
-    project_pt = config.get('DIRECTORY', 'project_pt')
-    part_size = 200000
-
-    embedding_index, embedding_matrix = load_embedding_file('%s/data/devel/glove.vec.txt' % project_pt)
-
-    model = TitleContentCNN(title_length=200, content_length=200, embedding_matrix=embedding_matrix)
+    # load embedding file
+    embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'), config.get('TITLE_CONTENT_CNN', 'embedding_fn'))
+    embedding_index, embedding_matrix = load_embedding(embedding_fp)
+    # init model
+    title_length = config.getint('TITLE_CONTENT_CNN', 'title_length')
+    content_length = config.getint('TITLE_CONTENT_CNN', 'content_length')
+    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+    model = TitleContentCNN(title_length=title_length,
+                            content_length=content_length,
+                            class_num=class_num,
+                            embedding_matrix=embedding_matrix)
 
     title_vec_valid, cont_vec_valid, label_vec_valid, qid_valid = load_valid(
-        '%s/data/train_data/title_content_word.valid.csv' % project_pt, embedding_index)
+        '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'valid_fn')), embedding_index, class_num)
 
     part_id = 0
-    train_fp = '%s/data/train_data/title_content_word.train.csv' % project_pt
-    for title_vec_train, cont_vec_train, label_vec_train in load_train(train_fp, part_size, embedding_index):
+    train_fp = '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'train_fn'))
+    for title_vec_train, cont_vec_train, label_vec_train in load_train(train_fp, part_size, embedding_index, class_num):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         model.fit([title_vec_train, cont_vec_train],
                   label_vec_train,
@@ -65,9 +69,9 @@ def train(config):
 
 if __name__ == '__main__':
     config_fp = sys.argv[1]
-    cf = ConfigParser.ConfigParser()
-    cf.read(config_fp)
+    config = ConfigParser.ConfigParser()
+    config.read(config_fp)
 
-    train(cf)
+    train(config)
 
 

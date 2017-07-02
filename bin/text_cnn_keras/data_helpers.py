@@ -9,41 +9,28 @@ from utils import LogUtil
 import numpy as np
 
 
-def load_embedding_file(file_path):
-    emb_size = 0
-    word_num = 0
+def load_embedding(file_path):
+    emb_f = open(file_path, 'r')
+
+    shape = emb_f.readline().strip()
+    word_num, emb_size = [int(x) for x in shape.split()]
+    LogUtil.log('INFO', 'embedding_shape=(%d, %d)' % (word_num, emb_size))
+
+    emb_index = {}
+    emb_matrix = [['0.'] * emb_size, ['0.'] * emb_size]
 
     for line in open(file_path):
-        values = line.split()
-        if len(values) == 0:
-            continue
-        word_num += 1
-        if 0 == emb_size:
-            coefs = np.asarray(values[1:], dtype='float32')
-            emb_size = len(coefs)
+        subs = line.strip().split()
+        word = subs[0]
+        vec = subs[1:]
+        emb_index[word] = len(emb_matrix)
+        emb_matrix.append(vec)
+    emb_matrix = np.asarray(emb_matrix, dtype='float32')
 
-    LogUtil.log('INFO', 'word_num=%d' % word_num)
-    LogUtil.log('INFO', 'emb_size=%d' % emb_size)
-
-    embedding_index = {}
-    embedding_matrix = np.zeros((word_num + 1, emb_size))
-
-    cnt = 0
-    for line in open(file_path):
-        values = line.split()
-        if len(values) == 0:
-            continue
-        word = values[0]
-        coefs = np.asarray(values[1:], dtype='float32')
-        cnt += 1
-        embedding_index[word] = cnt
-        embedding_matrix[cnt] = coefs
-
-    LogUtil.log('INFO', "Total embedding word is %s ." % len(embedding_index))
-    return embedding_index, embedding_matrix
+    return emb_index, emb_matrix
 
 
-def load_valid(valid_fp, emb_index, size=200):
+def load_valid(valid_fp, emb_index, class_num, size=200):
     qid = []
     title_x_val = []
     cont_x_val = []
@@ -52,7 +39,7 @@ def load_valid(valid_fp, emb_index, size=200):
     for line in open(valid_fp):
         line = line.strip('\n')
         part = line.split("\t")
-        assert (len(part) == 4)
+        assert 4 == len(part) == 4
 
         qid.append(part[0])
 
@@ -63,7 +50,7 @@ def load_valid(valid_fp, emb_index, size=200):
         title_x_val.append(title_word)
         cont_x_val.append(cont_word)
 
-        tmp = [0] * 2000
+        tmp = [0] * class_num
         for t in part[3].split(','):
             if t == "":
                 continue
@@ -80,7 +67,7 @@ def load_valid(valid_fp, emb_index, size=200):
     return title_x_val, cont_x_val, y_val, qid
 
 
-def load_train(file_path, part_size, emb_index, size=200):
+def load_train(file_path, part_size, emb_index, class_num, size=200):
     count = 0
     title_vec = []
     content_vec = []
@@ -89,13 +76,11 @@ def load_train(file_path, part_size, emb_index, size=200):
         f = open(file_path)
         for line in f:
             line = line.strip('\n')
-            if len(line) == 0:
-                continue
             part = line.split("\t")
-            _label_vec = [0] * 2000
+            assert len(part) == 4
+            _label_vec = [0] * class_num
             for label_id in part[3].split(','):
                 label_id = int(label_id)
-                assert label_id != 0, 'illegal label ID (0) at line (%d)' % count
                 _label_vec[label_id] = 1
 
             title_word = [emb_index[x] for x in part[1].split(',') if x in emb_index]

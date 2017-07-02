@@ -13,7 +13,7 @@ from utils import LogUtil
 
 class TitleContentCNN(object):
 
-    def __init__(self, title_length, content_length, embedding_matrix):
+    def __init__(self, title_length, content_length, class_num, embedding_matrix):
         # Placeholder for input (title and content)
         title_input = Input(shape=(title_length, ), dtype='int32', name="title_word_input")
         cont_input = Input(shape=(content_length, ), dtype='int32', name="content_word_input")
@@ -32,10 +32,10 @@ class TitleContentCNN(object):
         title_cont_pool = GlobalMaxPooling1D()(title_cont_conv)
 
         # Full connection
-        title_cont_features = Dense(1024,activation='relu')(title_cont_pool)
+        title_cont_features = Dense(1024, activation='relu')(title_cont_pool)
 
         # Prediction
-        preds = Dense(2000, activation='sigmoid')(title_cont_features)
+        preds = Dense(class_num, activation='sigmoid')(title_cont_features)
 
         self._model = Model([title_input, cont_input], preds)
         self._model.compile(loss=binary_crossentropy_sum, optimizer='rmsprop', metrics=['accuracy'])

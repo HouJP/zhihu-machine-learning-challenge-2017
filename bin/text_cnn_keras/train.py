@@ -54,6 +54,7 @@ def train(config):
         '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'valid_fn')), embedding_index, class_num)
 
     part_id = 0
+    part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
     train_fp = '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'train_fn'))
     for title_vec_train, cont_vec_train, label_vec_train in load_train(train_fp, part_size, embedding_index, class_num):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)

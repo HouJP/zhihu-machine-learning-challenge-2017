@@ -19,7 +19,7 @@ def load_embedding(file_path):
     emb_index = {}
     emb_matrix = [['0.'] * emb_size, ['0.'] * emb_size]
 
-    for line in open(file_path):
+    for line in emb_f:
         subs = line.strip().split()
         word = subs[0]
         vec = subs[1:]
@@ -102,3 +102,8 @@ def load_train(file_path, part_size, emb_index, class_num, size=200):
                 content_vec = []
                 label_vec = []
         f.close()
+
+
+if __name__ == '__main__':
+    load_embedding('/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/data/embedding/word_embedding.txt.small')
+

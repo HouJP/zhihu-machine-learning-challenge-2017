@@ -18,7 +18,7 @@ def save_prediction(pred_fp, preds, id2label, que_ids_test):
     for line_id, p in enumerate(preds):
         label_id_sorted = sorted(list(enumerate(p)), key=lambda s: s[1], reverse=True)
         label_sorted = [id2label[str(kv[0])] for kv in label_id_sorted[:5]]
-        pred_f.write("%s,%s"%(que_ids_test[line_id], ','.join(label_sorted)))
+        pred_f.write("%s,%s\n" % (que_ids_test[line_id], ','.join(label_sorted)))
         if 0 == line_id % 10000:
             LogUtil.log('INFO', '%d lines prediction done' % line_id)
     pred_f.close()

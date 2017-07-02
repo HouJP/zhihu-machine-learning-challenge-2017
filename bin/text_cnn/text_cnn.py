@@ -77,4 +77,4 @@ class TitleContentCNN(object):
         self._model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
     def predict(self, x, batch_size, verbose):
-        self._model.predict(x, batch_size=batch_size, verbose=verbose)
+        return self._model.predict(x, batch_size=batch_size, verbose=verbose)

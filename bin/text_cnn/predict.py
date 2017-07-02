@@ -44,7 +44,7 @@ def predict(config, part_id):
     # load model
     optimizer = config.get('TITLE_CONTENT_CNN', 'optimizer')
     metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
-    batch_size = config.get('TITLE_CONTENT_CNN', 'batch_size')
+    batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     model = TitleContentCNN(title_length=title_length,
                             content_length=content_length,
                             class_num=class_num,

@@ -45,10 +45,14 @@ def train(config):
     title_length = config.getint('TITLE_CONTENT_CNN', 'title_length')
     content_length = config.getint('TITLE_CONTENT_CNN', 'content_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+    optimizer = config.get('TITLE_CONTENT_CNN', 'optimizer')
+    metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
     model = TitleContentCNN(title_length=title_length,
                             content_length=content_length,
                             class_num=class_num,
-                            embedding_matrix=embedding_matrix)
+                            embedding_matrix=embedding_matrix,
+                            optimizer=optimizer,
+                            metrics=metrics)
 
     que_ids_valid, title_vecs_valid, cont_vecs_valid, label_vecs_valid = load_dataset(
         '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'valid_fn')),

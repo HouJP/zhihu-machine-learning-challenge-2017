@@ -13,7 +13,20 @@ from utils import LogUtil
 
 class TitleContentCNN(object):
 
-    def __init__(self, title_length, content_length, class_num, embedding_matrix):
+    def __init__(self,
+                 title_length,
+                 content_length,
+                 class_num,
+                 embedding_matrix,
+                 optimizer,
+                 metrics):
+        # set attributes
+        self.title_length = title_length
+        self.content_length = content_length
+        self.class_num = class_num
+        self.embedding_matrix = embedding_matrix
+        self.optimizer = optimizer
+        self.metrics = metrics
         # Placeholder for input (title and content)
         title_input = Input(shape=(title_length, ), dtype='int32', name="title_word_input")
         cont_input = Input(shape=(content_length, ), dtype='int32', name="content_word_input")
@@ -38,7 +51,7 @@ class TitleContentCNN(object):
         preds = Dense(class_num, activation='sigmoid')(title_cont_features)
 
         self._model = Model([title_input, cont_input], preds)
-        self._model.compile(loss=binary_crossentropy_sum, optimizer='rmsprop', metrics=['accuracy'])
+        self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
         # self._model.summary()
 
     def save(self, model_fp):
@@ -56,8 +69,12 @@ class TitleContentCNN(object):
         self._model = model_from_json(model_json)
         # load weights into new model
         self._model.load_weights('%s.h5' % model_fp)
+        # compile model
+        self._model.compile(loss=binary_crossentropy_sum, optimizer=self.optimizer, metrics=self.metrics)
         LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)
 
     def fit(self, x, y, batch_size=32, epochs=1, validation_data=None):
         self._model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
+    def predict(self, x, batch_size, verbose):
+        self._model.predict(x, batch_size=batch_size, verbose=verbose)

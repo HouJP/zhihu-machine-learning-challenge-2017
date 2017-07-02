@@ -1,90 +1,63 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
-# @Time    : 2017/6/26 21:21
+# @Time    : 2017/6/30 10:31
 # @Author  : HouJP
 # @Email   : houjp1992@gmail.com
 
 
-import tensorflow as tf
+from keras.layers import Dense, Input, Embedding, Conv1D, merge, GlobalMaxPooling1D
+from keras.models import Model, model_from_json
+from loss import binary_crossentropy_sum
+from utils import LogUtil
 
 
-class TextCNN(object):
-    """
-    A CNN for text classification.
-    Uses an embedding layer, followed by a convolutional, max-pooling and softmax layer.
-    """
-    def __init__(
-      self, sequence_length, num_classes, vocab_size,
-      embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0):
+class TitleContentCNN(object):
 
-        # Placeholders for input, output and dropout
-        self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
-        self.input_y = tf.placeholder(tf.float32, [None, num_classes], name="input_y")
-        self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
-
-        # Keeping track of l2 regularization loss (optional)
-        l2_loss = tf.constant(0.0)
+    def __init__(self, title_length, content_length, class_num, embedding_matrix):
+        # Placeholder for input (title and content)
+        title_input = Input(shape=(title_length, ), dtype='int32', name="title_word_input")
+        cont_input = Input(shape=(content_length, ), dtype='int32', name="content_word_input")
 
         # Embedding layer
-        with tf.device('/cpu:0'), tf.name_scope("embedding"):
-            self.W = tf.Variable(
-                tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0),
-                name="W")
-            self.embedded_chars = tf.nn.embedding_lookup(self.W, self.input_x)
-            self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
+        embedding_layer = Embedding(len(embedding_matrix), 256, weights=[embedding_matrix], trainable=True)
+        title_emb = embedding_layer(title_input)
+        cont_emb = embedding_layer(cont_input)
 
-        # Create a convolution + maxpool layer for each filter size
-        pooled_outputs = []
-        for i, filter_size in enumerate(filter_sizes):
-            with tf.name_scope("conv-maxpool-%s" % filter_size):
-                # Convolution Layer
-                filter_shape = [filter_size, embedding_size, 1, num_filters]
-                W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
-                b = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b")
-                conv = tf.nn.conv2d(
-                    self.embedded_chars_expanded,
-                    W,
-                    strides=[1, 1, 1, 1],
-                    padding="VALID",
-                    name="conv")
-                # Apply nonlinearity
-                h = tf.nn.relu(tf.nn.bias_add(conv, b), name="relu")
-                # Maxpooling over the outputs
-                pooled = tf.nn.max_pool(
-                    h,
-                    ksize=[1, sequence_length - filter_size + 1, 1, 1],
-                    strides=[1, 1, 1, 1],
-                    padding='VALID',
-                    name="pool")
-                pooled_outputs.append(pooled)
+        # Create a convolution + max pooling layer
+        title_cont_conv = list()
+        for win_size in range(2, 6):
+            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(title_emb))
+            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_emb))
+        title_cont_conv = merge(title_cont_conv, mode='concat')
+        title_cont_pool = GlobalMaxPooling1D()(title_cont_conv)
 
-        # Combine all the pooled features
-        num_filters_total = num_filters * len(filter_sizes)
-        self.h_pool = tf.concat(pooled_outputs, 3)
-        self.h_pool_flat = tf.reshape(self.h_pool, [-1, num_filters_total])
+        # Full connection
+        title_cont_features = Dense(1024, activation='relu')(title_cont_pool)
 
-        # Add dropout
-        with tf.name_scope("dropout"):
-            self.h_drop = tf.nn.dropout(self.h_pool_flat, self.dropout_keep_prob)
+        # Prediction
+        preds = Dense(class_num, activation='sigmoid')(title_cont_features)
 
-        # Final (unnormalized) scores and predictions
-        with tf.name_scope("output"):
-            W = tf.get_variable(
-                "W",
-                shape=[num_filters_total, num_classes],
-                initializer=tf.contrib.layers.xavier_initializer())
-            b = tf.Variable(tf.constant(0.1, shape=[num_classes]), name="b")
-            l2_loss += tf.nn.l2_loss(W)
-            l2_loss += tf.nn.l2_loss(b)
-            self.scores = tf.nn.xw_plus_b(self.h_drop, W, b, name="scores")
-            self.predictions = tf.argmax(self.scores, 1, name="predictions")
+        self._model = Model([title_input, cont_input], preds)
+        self._model.compile(loss=binary_crossentropy_sum, optimizer='rmsprop', metrics=['accuracy'])
+        # self._model.summary()
 
-        # CalculateMean cross-entropy loss
-        with tf.name_scope("loss"):
-            losses = tf.nn.softmax_cross_entropy_with_logits(logits=self.scores, labels=self.input_y)
-            self.loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
+    def save(self, model_fp):
+        model_json = self._model.to_json()
+        with open('%s.json' % model_fp, 'w') as json_file:
+            json_file.write(model_json)
+        self._model.save_weights('%s.h5' % model_fp)
+        LogUtil.log('INFO', 'save model (%s) to disk done' % model_fp)
 
-        # Accuracy
-        with tf.name_scope("accuracy"):
-            correct_predictions = tf.equal(self.predictions, tf.argmax(self.input_y, 1))
-            self.accuracy = tf.reduce_mean(tf.cast(correct_predictions, "float"), name="accuracy")
+    def load(self, model_fp):
+        # load json and create model
+        json_file = open('%s.json' % model_fp, 'r')
+        model_json = json_file.read()
+        json_file.close()
+        self._model = model_from_json(model_json)
+        # load weights into new model
+        self._model.load_weights('%s.h5' % model_fp)
+        LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)
+
+    def fit(self, x, y, batch_size=32, epochs=1, validation_data=None):
+        self._model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
+

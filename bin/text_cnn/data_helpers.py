@@ -1,69 +1,117 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
-# @Time    : 2017/6/29 11:45
+# @Time    : 2017/7/1 00:27
 # @Author  : HouJP
 # @Email   : houjp1992@gmail.com
 
+
+from utils import LogUtil
 import numpy as np
-import re
 
 
-def clean_str(string):
-    """
-    Tokenization/string cleaning for all datasets except for SST.
-    Original taken from https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
-    """
-    string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
-    string = re.sub(r"\'s", " \'s", string)
-    string = re.sub(r"\'ve", " \'ve", string)
-    string = re.sub(r"n\'t", " n\'t", string)
-    string = re.sub(r"\'re", " \'re", string)
-    string = re.sub(r"\'d", " \'d", string)
-    string = re.sub(r"\'ll", " \'ll", string)
-    string = re.sub(r",", " , ", string)
-    string = re.sub(r"!", " ! ", string)
-    string = re.sub(r"\(", " \( ", string)
-    string = re.sub(r"\)", " \) ", string)
-    string = re.sub(r"\?", " \? ", string)
-    string = re.sub(r"\s{2,}", " ", string)
-    return string.strip().lower()
+def load_embedding(file_path):
+    emb_f = open(file_path, 'r')
+
+    shape = emb_f.readline().strip()
+    word_num, emb_size = [int(x) for x in shape.split()]
+    LogUtil.log('INFO', 'embedding_shape=(%d, %d)' % (word_num, emb_size))
+
+    emb_index = {}
+    emb_matrix = [['0.'] * emb_size, ['0.'] * emb_size]
+
+    for line in emb_f:
+        subs = line.strip().split()
+        word = subs[0]
+        vec = subs[1:]
+        emb_index[word] = len(emb_matrix)
+        emb_matrix.append(vec)
+    emb_matrix = np.asarray(emb_matrix, dtype='float32')
+
+    return emb_index, emb_matrix
 
 
-def load_data_and_labels(positive_data_file, negative_data_file):
-    """
-    Loads MR polarity data from files, splits the data into words and generates labels.
-    Returns split sentences and labels.
-    """
-    # Load data from files
-    positive_examples = list(open(positive_data_file, "r").readlines())
-    positive_examples = [s.strip() for s in positive_examples]
-    negative_examples = list(open(negative_data_file, "r").readlines())
-    negative_examples = [s.strip() for s in negative_examples]
-    # Split by words
-    x_text = positive_examples + negative_examples
-    x_text = [clean_str(sent) for sent in x_text]
-    # Generate labels
-    positive_labels = [[0, 1] for _ in positive_examples]
-    negative_labels = [[1, 0] for _ in negative_examples]
-    y = np.concatenate([positive_labels, negative_labels], 0)
-    return [x_text, y]
+def parse_dataset_line(line, emb_index, class_num, title_length, content_length):
+    line = line.strip('\n')
+    part = line.split("\t")
+    assert 4 == len(part)
+
+    que_id = part[0]
+
+    title_vec = [emb_index[x] if x in emb_index else 1 for x in part[1].split(',')]
+    title_vec = title_vec + [0] * (title_length - len(title_vec)) if len(title_vec) < title_length \
+        else title_vec[:title_length]
+    cont_vec = [emb_index[x] if x in emb_index else 1 for x in part[2].split(',')]
+    cont_vec = cont_vec + [0] * (content_length - len(cont_vec)) if len(cont_vec) < content_length \
+        else cont_vec[:content_length]
+
+    label_vec = [0] * class_num
+    for label_id in part[3].split(','):
+        label_vec[int(label_id)] = 1
+
+    return que_id, title_vec, cont_vec, label_vec
 
 
-def batch_iter(data, batch_size, num_epochs, shuffle=True):
-    """
-    Generates a batch iterator for a dataset.
-    """
-    data = np.array(data)
-    data_size = len(data)
-    num_batches_per_epoch = int((len(data)-1)/batch_size) + 1
-    for epoch in range(num_epochs):
-        # Shuffle the data at each epoch
-        if shuffle:
-            shuffle_indices = np.random.permutation(np.arange(data_size))
-            shuffled_data = data[shuffle_indices]
-        else:
-            shuffled_data = data
-        for batch_num in range(num_batches_per_epoch):
-            start_index = batch_num * batch_size
-            end_index = min((batch_num + 1) * batch_size, data_size)
-            yield shuffled_data[start_index:end_index]
+def load_dataset(file_path, emb_index, class_num, title_length, content_length):
+    que_ids = []
+    title_vecs = []
+    cont_vecs = []
+    label_vecs = []
+
+    for line in open(file_path):
+        que_id, title_vec, cont_vec, label_vec = parse_dataset_line(line,
+                                                                    emb_index,
+                                                                    class_num,
+                                                                    title_length,
+                                                                    content_length)
+
+        que_ids.append(que_id)
+        title_vecs.append(title_vec)
+        cont_vecs.append(cont_vec)
+        label_vecs.append(label_vec)
+
+    title_vecs = np.asarray(title_vecs, dtype='int32')
+    cont_vecs = np.asarray(cont_vecs, dtype='int32')
+    label_vecs = np.asarray(label_vecs, dtype='int32')
+
+    LogUtil.log('INFO', 'title_vecs.shape=%s' % str(title_vecs.shape))
+    LogUtil.log('INFO', 'cont_vecs.shape=%s' % str(cont_vecs.shape))
+    LogUtil.log('INFO', 'label_vecs.shape=%s' % str(label_vecs.shape))
+    return que_ids, title_vecs, cont_vecs, label_vecs
+
+
+def load_dataset_loop(file_path, part_size, emb_index, class_num, title_length, content_length):
+    count = 0
+    que_ids = []
+    title_vecs = []
+    cont_vecs = []
+    label_vecs = []
+    while True:
+        f = open(file_path)
+        for line in f:
+            que_id, title_vec, cont_vec, label_vec = parse_dataset_line(line,
+                                                                        emb_index,
+                                                                        class_num,
+                                                                        title_length,
+                                                                        content_length)
+
+            que_ids.append(que_id)
+            title_vecs.append(title_vec)
+            cont_vecs.append(cont_vec)
+            label_vecs.append(label_vec)
+
+            count += 1
+            if 0 == count % part_size:
+                title_vecs = np.asarray(title_vecs, dtype='int32')
+                cont_vecs = np.asarray(cont_vecs, dtype='int32')
+                label_vecs = np.asarray(label_vecs, dtype='int32')
+                yield que_ids, title_vecs, cont_vecs, label_vecs
+                title_vecs = []
+                cont_vecs = []
+                label_vecs = []
+                que_ids = []
+        f.close()
+
+
+if __name__ == '__main__':
+    load_embedding('/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/data/embedding/word_embedding.txt.small')
+

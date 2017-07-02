@@ -1,192 +1,86 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
-# @Time    : 2017/6/29 09:46
+# @Time    : 2017/6/30 16:41
 # @Author  : HouJP
 # @Email   : houjp1992@gmail.com
 
 
-import datetime
-import os
+from data_helpers import load_embedding
+from data_helpers import load_dataset, load_dataset_loop
+from text_cnn import TitleContentCNN
+from utils import LogUtil
+import ConfigParser
+import sys
 import time
-
-import numpy as np
-import tensorflow as tf
-from tensorflow.contrib import learn
-
-import data_helpers
-from text_cnn import TextCNN
-
-# Parameters
-# ==================================================
-
-# Data loading params
-tf.flags.DEFINE_float("dev_sample_percentage", .1, "Percentage of the training data to use for validation")
-tf.flags.DEFINE_string("positive_data_file", "../../data/rt-polaritydata/rt-polarity.pos", "Data source for the positive data.")
-tf.flags.DEFINE_string("negative_data_file", "../../data/rt-polaritydata/rt-polarity.neg", "Data source for the negative data.")
-
-# Model Hyperparameters
-tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
-tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
-tf.flags.DEFINE_integer("num_filters", 128, "Number of filters per filter size (default: 128)")
-tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
-tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularization lambda (default: 0.0)")
-
-# Training parameters
-tf.flags.DEFINE_integer("batch_size", 64, "Batch Size (default: 64)")
-tf.flags.DEFINE_integer("num_epochs", 200, "Number of training epochs (default: 200)")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps (default: 100)")
-tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps (default: 100)")
-tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (default: 5)")
-# Misc Parameters
-tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
-tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
-
-FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
-print("\nParameters:")
-for attr, value in sorted(FLAGS.__flags.items()):
-    print("{}={}".format(attr.upper(), value))
-print("")
+import os
 
 
-# Data Preparation
-# ==================================================
-
-# Load data
-print("Loading data...")
-x_text, y = data_helpers.load_data_and_labels(FLAGS.positive_data_file, FLAGS.negative_data_file)
-
-# Build vocabulary
-max_document_length = max([len(x.split(" ")) for x in x_text])
-vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length)
-x = np.array(list(vocab_processor.fit_transform(x_text)))
-
-# Randomly shuffle data
-np.random.seed(10)
-shuffle_indices = np.random.permutation(np.arange(len(y)))
-x_shuffled = x[shuffle_indices]
-y_shuffled = y[shuffle_indices]
-
-# Split train/test set
-# TODO: This is very crude, should use cross-validation
-dev_sample_index = -1 * int(FLAGS.dev_sample_percentage * float(len(y)))
-x_train, x_dev = x_shuffled[:dev_sample_index], x_shuffled[dev_sample_index:]
-y_train, y_dev = y_shuffled[:dev_sample_index], y_shuffled[dev_sample_index:]
-print("Vocabulary Size: {:d}".format(len(vocab_processor.vocabulary_)))
-print("Train/Dev split: {:d}/{:d}".format(len(y_train), len(y_dev)))
+def init_out_dir(config):
+    # generate output tag
+    out_tag = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
+    config.set('DIRECTORY', 'out_tag', str(out_tag))
+    # generate output directory
+    out_pt = config.get('DIRECTORY', 'out_pt')
+    out_pt_exists = os.path.exists(out_pt)
+    if out_pt_exists:
+        LogUtil.log("ERROR", 'out path (%s) already exists ' % out_pt)
+        raise Exception
+    else:
+        os.mkdir(out_pt)
+        os.mkdir(config.get('DIRECTORY', 'pred_pt'))
+        os.mkdir(config.get('DIRECTORY', 'model_pt'))
+        os.mkdir(config.get('DIRECTORY', 'conf_pt'))
+        os.mkdir(config.get('DIRECTORY', 'score_pt'))
+        LogUtil.log('INFO', 'out path (%s) created ' % out_pt)
+    # save config
+    config.write(open(config.get('DIRECTORY', 'conf_pt') + 'featwheel.conf', 'w'))
 
 
-# Training
-# ==================================================
+def train(config):
+    init_out_dir(config)
+    # load embedding file
+    embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'), config.get('TITLE_CONTENT_CNN', 'embedding_fn'))
+    embedding_index, embedding_matrix = load_embedding(embedding_fp)
+    # init model
+    title_length = config.getint('TITLE_CONTENT_CNN', 'title_length')
+    content_length = config.getint('TITLE_CONTENT_CNN', 'content_length')
+    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+    model = TitleContentCNN(title_length=title_length,
+                            content_length=content_length,
+                            class_num=class_num,
+                            embedding_matrix=embedding_matrix)
 
-with tf.Graph().as_default():
-    session_conf = tf.ConfigProto(
-      allow_soft_placement=FLAGS.allow_soft_placement,
-      log_device_placement=FLAGS.log_device_placement)
-    sess = tf.Session(config=session_conf)
-    with sess.as_default():
-        cnn = TextCNN(
-            sequence_length=x_train.shape[1],
-            num_classes=y_train.shape[1],
-            vocab_size=len(vocab_processor.vocabulary_),
-            embedding_size=FLAGS.embedding_dim,
-            filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
-            num_filters=FLAGS.num_filters,
-            l2_reg_lambda=FLAGS.l2_reg_lambda)
+    que_ids_valid, title_vecs_valid, cont_vecs_valid, label_vecs_valid = load_dataset(
+        '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'valid_fn')),
+        embedding_index,
+        class_num,
+        title_length,
+        content_length)
 
-        # Define Training procedure
-        global_step = tf.Variable(0, name="global_step", trainable=False)
-        optimizer = tf.train.AdamOptimizer(1e-3)
-        grads_and_vars = optimizer.compute_gradients(cnn.loss)
-        train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
+    part_id = 0
+    part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
+    batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
+    train_fp = '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'train_fn'))
+    for que_ids_train, title_vecs_train, cont_vecs_train, label_vecs_train in load_dataset_loop(train_fp,
+                                                                                                part_size,
+                                                                                                embedding_index,
+                                                                                                class_num,
+                                                                                                title_length,
+                                                                                                content_length):
+        LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
+        model.fit([title_vecs_train, cont_vecs_train],
+                  label_vecs_train,
+                  validation_data=([title_vecs_valid, cont_vecs_valid], label_vecs_valid),
+                  epochs=1,
+                  batch_size=batch_size)
+        model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
+        model.save(model_fp)
+        part_id += 1
 
-        # Keep track of gradient values and sparsity (optional)
-        grad_summaries = []
-        for g, v in grads_and_vars:
-            if g is not None:
-                grad_hist_summary = tf.summary.histogram("{}/grad/hist".format(v.name), g)
-                sparsity_summary = tf.summary.scalar("{}/grad/sparsity".format(v.name), tf.nn.zero_fraction(g))
-                grad_summaries.append(grad_hist_summary)
-                grad_summaries.append(sparsity_summary)
-        grad_summaries_merged = tf.summary.merge(grad_summaries)
 
-        # Output directory for models and summaries
-        timestamp = str(int(time.time()))
-        out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
-        print("Writing to {}\n".format(out_dir))
+if __name__ == '__main__':
+    config_fp = sys.argv[1]
+    config = ConfigParser.ConfigParser()
+    config.read(config_fp)
 
-        # Summaries for loss and accuracy
-        loss_summary = tf.summary.scalar("loss", cnn.loss)
-        acc_summary = tf.summary.scalar("accuracy", cnn.accuracy)
-
-        # Train Summaries
-        train_summary_op = tf.summary.merge([loss_summary, acc_summary, grad_summaries_merged])
-        train_summary_dir = os.path.join(out_dir, "summaries", "train")
-        train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
-
-        # Dev summaries
-        dev_summary_op = tf.summary.merge([loss_summary, acc_summary])
-        dev_summary_dir = os.path.join(out_dir, "summaries", "dev")
-        dev_summary_writer = tf.summary.FileWriter(dev_summary_dir, sess.graph)
-
-        # Checkpoint directory. Tensorflow assumes this directory already exists so we need to create it
-        checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
-        checkpoint_prefix = os.path.join(checkpoint_dir, "model")
-        if not os.path.exists(checkpoint_dir):
-            os.makedirs(checkpoint_dir)
-        saver = tf.train.Saver(tf.global_variables(), max_to_keep=FLAGS.num_checkpoints)
-
-        # Write vocabulary
-        vocab_processor.save(os.path.join(out_dir, "vocab"))
-
-        # Initialize all variables
-        sess.run(tf.global_variables_initializer())
-
-        def train_step(x_batch, y_batch):
-            """
-            A single training step
-            """
-            feed_dict = {
-              cnn.input_x: x_batch,
-              cnn.input_y: y_batch,
-              cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
-            }
-            _, step, summaries, loss, accuracy = sess.run(
-                [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
-                feed_dict)
-            time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-            train_summary_writer.add_summary(summaries, step)
-
-        def dev_step(x_batch, y_batch, writer=None):
-            """
-            Evaluates model on a dev set
-            """
-            feed_dict = {
-              cnn.input_x: x_batch,
-              cnn.input_y: y_batch,
-              cnn.dropout_keep_prob: 1.0
-            }
-            step, summaries, loss, accuracy = sess.run(
-                [global_step, dev_summary_op, cnn.loss, cnn.accuracy],
-                feed_dict)
-            time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
-            if writer:
-                writer.add_summary(summaries, step)
-
-        # Generate batches
-        batches = data_helpers.batch_iter(
-            list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
-        # Training loop. For each batch...
-        for batch in batches:
-            x_batch, y_batch = zip(*batch)
-            train_step(x_batch, y_batch)
-            current_step = tf.train.global_step(sess, global_step)
-            if current_step % FLAGS.evaluate_every == 0:
-                print("\nEvaluation:")
-                dev_step(x_dev, y_dev, writer=dev_summary_writer)
-                print("")
-            if current_step % FLAGS.checkpoint_every == 0:
-                path = saver.save(sess, checkpoint_prefix, global_step=current_step)
-                print("Saved model checkpoint to {}\n".format(path))
+    train(config)

@@ -10,7 +10,7 @@ import os
 import sys
 import time
 
-from bin.utils import LogUtil
+from ..utils import LogUtil
 from data_helpers import load_dataset, load_dataset_loop
 from data_helpers import load_embedding
 from text_cnn import TitleContentCNN

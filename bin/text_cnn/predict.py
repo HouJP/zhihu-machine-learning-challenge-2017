@@ -9,7 +9,7 @@ import ConfigParser
 import json
 import sys
 
-from bin.utils import LogUtil
+from ..utils import LogUtil
 from data_helpers import load_embedding, load_dataset
 from text_cnn import TitleContentCNN
 

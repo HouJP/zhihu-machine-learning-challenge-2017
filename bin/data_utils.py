@@ -132,6 +132,97 @@ def generate_title_doc_char_dataset(config):
     title_content_char.close()
 
 
+def generate_dataset(config):
+    label2id_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'label2id_fn'))
+    label2id = json.load(open(label2id_fp, 'r'))
+
+    question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
+
+    topic_train_fp = config.get('DIRECTORY', 'source_pt') + '/question_topic_train_set.txt'
+    qid_offline, tid_offline = load_question_topic_set(topic_train_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/question_id.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % qid_offline[line_id]
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(tc_offline[line_id])
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(tw_offline[line_id])
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(dc_offline[line_id])
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(dw_offline[line_id])
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/label_id.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join([str(label2id[label]) for label in tid_offline[line_id]])
+        f.write(line)
+    f.close()
+
+    question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
+    qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/question_id.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % qid_online[line_id]
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(tc_online[line_id])
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(tw_online[line_id])
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(dc_online[line_id])
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(dw_online[line_id])
+        f.write(line)
+    f.close()
+
+
 def _test_load_question_set(cf):
     q_train_set = cf.get('DEFAULT', 'source_pt') + '/question_train_set.txt.small'
 
@@ -169,7 +260,7 @@ def main():
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
 
-    generate_title_doc_char_dataset(config)
+    generate_dataset(config)
 
 
 if __name__ == '__main__':

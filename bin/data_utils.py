@@ -115,7 +115,7 @@ def generate_title_doc_char_dataset(config):
         line = '%s\t%s\t%s\t%s\n' % (qid_train[line_id],
                                      ','.join(tc_train[line_id]),
                                      ','.join(dc_train[line_id]),
-                                     ','.join([label2id[label] for label in tid_train[line_id]]))
+                                     ','.join([str(label2id[label]) for label in tid_train[line_id]]))
         title_content_char.write(line)
     title_content_char.close()
 

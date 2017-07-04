@@ -124,7 +124,7 @@ def generate_title_doc_char_dataset(config):
 
     title_content_char_fp = config.get('DIRECTORY', 'dataset_pt') + '/title_content_char.online.csv'
     title_content_char = open(title_content_char_fp, 'w')
-    for line_id in range(len(qid_train)):
+    for line_id in range(len(qid_online)):
         line = '%s\t%s\t%s\t\n' % (qid_online[line_id],
                                    ','.join(tc_online[line_id]),
                                    ','.join(dc_online[line_id]))

@@ -7,6 +7,7 @@
 import ConfigParser
 from utils import DataUtil
 import sys
+import json
 
 
 def load_question_set(fp):
@@ -80,7 +81,7 @@ def load_question_topic_set(fp):
 
     f = open(fp)
     for line in f:
-        subs = line.strip().split()
+        subs = line.strip('\n').split('\t')
         qid_list.append(subs[0])
         tid_list.append(subs[1].split(','))
     f.close()
@@ -96,6 +97,39 @@ def random_split_dataset(config):
     valid_fp = config.get('DIRECTORY', 'dataset_pt') + 'title_content_word.valid_034.csv'
     DataUtil.save_vector(train_fp, train, 'w')
     DataUtil.save_vector(valid_fp, valid, 'w')
+
+
+def generate_title_doc_char_dataset(config):
+    label2id_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'label2id_fn'))
+    label2id = json.load(open(label2id_fp, 'r'))
+
+    question_train_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    qid_train, tc_train, tw_train, dc_train, dw_train = load_question_set(question_train_fp)
+
+    topic_train_fp = config.get('DIRECTORY', 'source_pt') + '/question_topic_train_set.txt'
+    qid_train, tid_train = load_question_topic_set(topic_train_fp)
+
+    title_content_char_fp = config.get('DIRECTORY', 'dataset_pt') + '/title_content_char.offline.csv'
+    title_content_char = open(title_content_char_fp, 'w')
+    for line_id in range(len(qid_train)):
+        line = '%s\t%s\t%s\t%s\n' % (qid_train[line_id],
+                                     ','.join(tc_train[line_id]),
+                                     ','.join(dc_train[line_id]),
+                                     ','.join([label2id[label] for label in tid_train[line_id]]))
+        title_content_char.write(line)
+    title_content_char.close()
+
+    question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
+    qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
+
+    title_content_char_fp = config.get('DIRECTORY', 'dataset_pt') + '/title_content_char.online.csv'
+    title_content_char = open(title_content_char_fp, 'w')
+    for line_id in range(len(qid_train)):
+        line = '%s\t%s\t%s\t\n' % (qid_online[line_id],
+                                   ','.join(tc_online[line_id]),
+                                   ','.join(dc_online[line_id]))
+        title_content_char.write(line)
+    title_content_char.close()
 
 
 def _test_load_question_set(cf):
@@ -135,8 +169,8 @@ def main():
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
 
-    random_split_dataset(config)
-    pass
+    generate_title_doc_char_dataset(config)
+
 
 if __name__ == '__main__':
     # _test()

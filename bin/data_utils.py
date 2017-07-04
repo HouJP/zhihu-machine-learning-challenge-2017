@@ -23,24 +23,12 @@ def load_question_set(fp):
     dw_list = []
     index = 0
     for line in f:
-        subs = line.strip().split('\t')
+        subs = line.strip('\n').split('\t')
         qid_list.append(subs[0])
-        if 1 < len(subs):
-            tc_list.append(subs[1].split(','))
-        else:
-            tc_list.append([])
-        if 2 < len(subs):
-            tw_list.append(subs[2].split(','))
-        else:
-            tw_list.append([])
-        if 3 < len(subs):
-            dc_list.append(subs[3].split(','))
-        else:
-            dc_list.append([])
-        if 4 < len(subs):
-            dw_list.append(subs[4].split(','))
-        else:
-            dw_list.append([])
+        tc_list.append(subs[1].split(','))
+        tw_list.append(subs[2].split(','))
+        dc_list.append(subs[3].split(','))
+        dw_list.append(subs[4].split(','))
         index += 1
     f.close()
     return qid_list, tc_list, tw_list, dc_list, dw_list

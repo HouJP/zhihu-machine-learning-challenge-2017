@@ -28,7 +28,7 @@ def length_analysis(que_list):
 
 
 def all_length_analysis(config):
-    question_set_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt.small'
+    question_set_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
     qid_list, tc_list, tw_list, dc_list, dw_list = load_question_set(question_set_fp)
 
     LogUtil.log('INFO', 'analysis length of title char:')

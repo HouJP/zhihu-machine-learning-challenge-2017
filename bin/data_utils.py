@@ -99,6 +99,16 @@ def random_split_dataset(config):
     DataUtil.save_vector(valid_fp, valid, 'w')
 
 
+def random_split_index_offline(config):
+    question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    question_offline = open(question_offline_fp, 'r').readlines()
+    [train, valid] = DataUtil.random_split(range(len(question_offline)), [0.966, 0.034])
+    train_fp = config.get('DIRECTORY', 'index_pt') + 'train_996.offline.index'
+    valid_fp = config.get('DIRECTORY', 'index_pt') + 'valid_034.offline.index'
+    DataUtil.save_vector(train_fp, train, 'w')
+    DataUtil.save_vector(valid_fp, valid, 'w')
+
+
 def generate_title_doc_char_dataset(config):
     label2id_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'label2id_fn'))
     label2id = json.load(open(label2id_fp, 'r'))
@@ -260,7 +270,7 @@ def main():
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
 
-    generate_dataset(config)
+    random_split_index_offline(config)
 
 
 if __name__ == '__main__':

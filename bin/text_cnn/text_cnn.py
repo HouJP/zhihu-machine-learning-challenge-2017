@@ -5,7 +5,8 @@
 # @Email   : houjp1992@gmail.com
 
 
-from keras.layers import Dense, Input, Embedding, Conv1D, merge, GlobalMaxPooling1D
+from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D
+from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
 
 from bin.utils import LogUtil
@@ -60,14 +61,14 @@ class TitleContentCNN(object):
         for win_size in range(2, 6):
             # batch_size x doc_len x embed_size
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(title_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(title_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_char_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_char_emb)))
-        title_content_features = merge(title_content_features, mode='concat')
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_char_emb)))
+        title_content_features = concatenate(title_content_features)
 
         # Full connection
         title_cont_features = Dense(1024, activation='relu')(title_content_features)

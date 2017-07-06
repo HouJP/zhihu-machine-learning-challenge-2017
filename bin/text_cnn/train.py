@@ -66,22 +66,22 @@ def train(config):
 
     # load title char vectors
     tc_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char')
-    tc_vecs_off = load_doc_vec(tc_off_fp, char_embedding_matrix, title_char_length, reverse=True)
+    tc_vecs_off = load_doc_vec(tc_off_fp, char_embedding_index, title_char_length, reverse=True)
     LogUtil.log('INFO', 'load offline title char vector done')
 
     # load title word vectors
     tw_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word')
-    tw_vecs_off = load_doc_vec(tw_off_fp, word_embedding_matrix, title_word_length, reverse=False)
+    tw_vecs_off = load_doc_vec(tw_off_fp, word_embedding_index, title_word_length, reverse=False)
     LogUtil.log('INFO', 'load offline title word vector done')
 
     # load content char vectors
     cc_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char')
-    cc_vecs_off = load_doc_vec(cc_off_fp, char_embedding_matrix, content_char_length, reverse=True)
+    cc_vecs_off = load_doc_vec(cc_off_fp, char_embedding_index, content_char_length, reverse=True)
     LogUtil.log('INFO', 'load offline content char vector done')
 
     # load content word vectors
     cw_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word')
-    cw_vecs_off = load_doc_vec(cw_off_fp, word_embedding_matrix, content_word_length, reverse=False)
+    cw_vecs_off = load_doc_vec(cw_off_fp, word_embedding_index, content_word_length, reverse=False)
     LogUtil.log('INFO', 'load offline content word vector done')
 
     # load label id vectors

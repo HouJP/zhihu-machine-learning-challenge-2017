@@ -13,35 +13,55 @@ from loss import binary_crossentropy_sum
 
 
 class TitleContentCNN(object):
-
     def __init__(self,
-                 title_length,
-                 content_length,
+                 title_word_length,
+                 content_word_length,
+                 title_char_length,
+                 content_char_length,
                  class_num,
-                 embedding_matrix,
+                 word_embedding_matrix,
+                 char_embedding_matrix,
                  optimizer,
                  metrics):
         # set attributes
-        self.title_length = title_length
-        self.content_length = content_length
+        self.title_word_length = title_word_length
+        self.content_word_length = content_word_length
+        self.title_char_length = title_char_length
+        self.content_char_length = content_char_length
         self.class_num = class_num
-        self.embedding_matrix = embedding_matrix
+        self.word_embedding_matrix = word_embedding_matrix
+        self.char_embedding_matrix = char_embedding_matrix
         self.optimizer = optimizer
         self.metrics = metrics
         # Placeholder for input (title and content)
-        title_input = Input(shape=(title_length, ), dtype='int32', name="title_word_input")
-        cont_input = Input(shape=(content_length, ), dtype='int32', name="content_word_input")
+        title_word_input = Input(shape=(title_word_length,), dtype='int32', name="title_word_input")
+        cont_word_input = Input(shape=(content_word_length,), dtype='int32', name="content_word_input")
+
+        title_char_input = Input(shape=(title_char_length,), dtype='int32', name="title_char_input")
+        cont_char_input = Input(shape=(content_char_length,), dtype='int32', name="content_char_input")
 
         # Embedding layer
-        embedding_layer = Embedding(len(embedding_matrix), 256, weights=[embedding_matrix], trainable=True)
-        title_emb = embedding_layer(title_input)
-        cont_emb = embedding_layer(cont_input)
+        word_embedding_layer = Embedding(len(word_embedding_matrix),
+                                         256,
+                                         weights=[word_embedding_matrix],
+                                         trainable=True, name='word_embedding')
+        title_word_emb = word_embedding_layer(title_word_input)
+        cont_word_emb = word_embedding_layer(cont_word_input)
+
+        char_embedding_layer = Embedding(len(char_embedding_matrix),
+                                         256,
+                                         weights=[char_embedding_matrix],
+                                         trainable=True, name='char_embedding')
+        title_char_emb = char_embedding_layer(title_char_input)
+        cont_char_emb = char_embedding_layer(cont_char_input)
 
         # Create a convolution + max pooling layer
         title_cont_conv = list()
         for win_size in range(2, 6):
-            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(title_emb))
-            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_emb))
+            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(title_word_emb))
+            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_word_emb))
+            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(title_char_emb))
+            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_char_emb))
         title_cont_conv = merge(title_cont_conv, mode='concat')
         title_cont_pool = GlobalMaxPooling1D()(title_cont_conv)
 
@@ -51,7 +71,7 @@ class TitleContentCNN(object):
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_cont_features)
 
-        self._model = Model([title_input, cont_input], preds)
+        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input], preds)
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
         # self._model.summary()
 

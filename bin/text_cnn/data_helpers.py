@@ -14,8 +14,8 @@ def load_embedding(file_path):
     emb_f = open(file_path, 'r')
 
     shape = emb_f.readline().strip()
-    word_num, emb_size = [int(x) for x in shape.split()]
-    LogUtil.log('INFO', 'embedding_shape=(%d, %d)' % (word_num, emb_size))
+    emb_num, emb_size = [int(x) for x in shape.split()]
+    LogUtil.log('INFO', 'embedding_shape=(%d, %d)' % (emb_num, emb_size))
 
     emb_index = {}
     emb_matrix = [['0.'] * emb_size, ['0.'] * emb_size]
@@ -31,7 +31,7 @@ def load_embedding(file_path):
     return emb_index, emb_matrix
 
 
-def parse_dataset_line(line, emb_index, class_num, title_length, content_length):
+def parse_dataset_line(line, emb_index, class_num, title_length, content_length, reverse):
     line = line.strip('\n')
     part = line.split("\t")
     assert 4 == len(part)
@@ -39,12 +39,19 @@ def parse_dataset_line(line, emb_index, class_num, title_length, content_length)
     que_id = part[0]
 
     title_vec = [emb_index[x] if x in emb_index else 1 for x in part[1].split(',')]
-    title_vec = title_vec + [0] * (title_length - len(title_vec)) if len(title_vec) < title_length \
-        else title_vec[:title_length]
+    if not reverse:
+        title_vec = title_vec + [0] * (title_length - len(title_vec)) if len(title_vec) < title_length \
+            else title_vec[:title_length]
+    else:
+        title_vec = [0] * (title_length - len(title_vec)) + title_vec if len(title_vec) < title_length \
+            else title_vec[-1 * title_length:]
     cont_vec = [emb_index[x] if x in emb_index else 1 for x in part[2].split(',')]
-    cont_vec = cont_vec + [0] * (content_length - len(cont_vec)) if len(cont_vec) < content_length \
-        else cont_vec[:content_length]
-
+    if not reverse:
+        cont_vec = cont_vec + [0] * (content_length - len(cont_vec)) if len(cont_vec) < content_length \
+            else cont_vec[:content_length]
+    else:
+        cont_vec = [0] * (content_length - len(cont_vec)) + cont_vec if len(cont_vec) < content_length \
+            else cont_vec[-1 * content_length:]
     label_vec = [0] * class_num
     if 0 != len(part[3].strip()):
         for label_id in part[3].split(','):
@@ -53,65 +60,51 @@ def parse_dataset_line(line, emb_index, class_num, title_length, content_length)
     return que_id, title_vec, cont_vec, label_vec
 
 
-def load_dataset(file_path, emb_index, class_num, title_length, content_length):
-    que_ids = []
-    title_vecs = []
-    cont_vecs = []
-    label_vecs = []
-
-    for line in open(file_path):
-        que_id, title_vec, cont_vec, label_vec = parse_dataset_line(line,
-                                                                    emb_index,
-                                                                    class_num,
-                                                                    title_length,
-                                                                    content_length)
-
-        que_ids.append(que_id)
-        title_vecs.append(title_vec)
-        cont_vecs.append(cont_vec)
-        label_vecs.append(label_vec)
-
-    title_vecs = np.asarray(title_vecs, dtype='int32')
-    cont_vecs = np.asarray(cont_vecs, dtype='int32')
-    label_vecs = np.asarray(label_vecs, dtype='int32')
-
-    LogUtil.log('INFO', 'title_vecs.shape=%s' % str(title_vecs.shape))
-    LogUtil.log('INFO', 'cont_vecs.shape=%s' % str(cont_vecs.shape))
-    LogUtil.log('INFO', 'label_vecs.shape=%s' % str(label_vecs.shape))
-    return que_ids, title_vecs, cont_vecs, label_vecs
+def parse_doc_vec(line, emb_index, vec_length, reverse):
+    vec = [emb_index[x] if x in emb_index else 1 for x in line.strip('\n').split(',')]
+    if not reverse:
+        vec = vec + [0] * (vec_length - len(vec)) if len(vec) < vec_length \
+            else vec[:vec_length]
+    else:
+        vec = [0] * (vec_length - len(vec)) + vec if len(vec) < vec_length \
+            else vec[-1 * vec_length:]
+    return vec
 
 
-def load_dataset_loop(file_path, part_size, emb_index, class_num, title_length, content_length):
+def load_doc_vec(file_path, emb_index, vec_length, reverse):
+    return [parse_doc_vec(line, emb_index, vec_length, reverse) for line in open(file_path).readlines()]
+
+
+def parse_lid_vec(line, class_num):
+    lid_vec = [0] * class_num
+    for lid in line.strip('\n').split(','):
+        lid_vec[int(lid)] = 1
+    return lid_vec
+
+
+def load_lid(file_path, class_num):
+    return [parse_lid_vec(line, class_num) for line in open(file_path).readlines()]
+
+
+def load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds):
+    sub_tc_vecs = np.asarray([tc_vecs[ind] for ind in inds], dtype='int32')
+    sub_tw_vecs = np.asarray([tw_vecs[ind] for ind in inds], dtype='int32')
+    sub_cc_vecs = np.asarray([cc_vecs[ind] for ind in inds], dtype='int32')
+    sub_cw_vecs = np.asarray([cw_vecs[ind] for ind in inds], dtype='int32')
+    sub_lid_vecs = np.asarray([lid_vecs[ind] for ind in inds], dtype='int32')
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs
+
+
+def load_dataset_loop(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds, part_size):
     count = 0
-    que_ids = []
-    title_vecs = []
-    cont_vecs = []
-    label_vecs = []
+    inds_len = len(inds)
+    inds_part = list()
     while True:
-        f = open(file_path)
-        for line in f:
-            que_id, title_vec, cont_vec, label_vec = parse_dataset_line(line,
-                                                                        emb_index,
-                                                                        class_num,
-                                                                        title_length,
-                                                                        content_length)
-
-            que_ids.append(que_id)
-            title_vecs.append(title_vec)
-            cont_vecs.append(cont_vec)
-            label_vecs.append(label_vec)
-
-            count += 1
-            if 0 == count % part_size:
-                title_vecs = np.asarray(title_vecs, dtype='int32')
-                cont_vecs = np.asarray(cont_vecs, dtype='int32')
-                label_vecs = np.asarray(label_vecs, dtype='int32')
-                yield que_ids, title_vecs, cont_vecs, label_vecs
-                title_vecs = []
-                cont_vecs = []
-                label_vecs = []
-                que_ids = []
-        f.close()
+        count += 1
+        inds_part.append(inds[count % inds_len])
+        if 0 == count % part_size:
+            yield load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds_part)
+            inds_part = list()
 
 
 if __name__ == '__main__':

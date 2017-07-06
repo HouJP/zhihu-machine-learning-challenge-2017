@@ -10,9 +10,8 @@ import os
 import sys
 import time
 
-from ..utils import LogUtil
-from data_helpers import load_dataset, load_dataset_loop
-from data_helpers import load_embedding
+from ..utils import DataUtil
+from data_helpers import *
 from text_cnn import TitleContentCNN
 
 
@@ -39,43 +38,90 @@ def init_out_dir(config):
 
 def train(config):
     init_out_dir(config)
-    # load embedding file
-    embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'), config.get('TITLE_CONTENT_CNN', 'embedding_fn'))
-    embedding_index, embedding_matrix = load_embedding(embedding_fp)
+    # load word embedding file
+    word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                   config.get('TITLE_CONTENT_CNN', 'word_embedding_fn'))
+    word_embedding_index, word_embedding_matrix = load_embedding(word_embedding_fp)
+    # load char embedding file
+    char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                   config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
+    char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
     # init model
-    title_length = config.getint('TITLE_CONTENT_CNN', 'title_length')
-    content_length = config.getint('TITLE_CONTENT_CNN', 'content_length')
+    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
+    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
+    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
+    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer = config.get('TITLE_CONTENT_CNN', 'optimizer')
     metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
-    model = TitleContentCNN(title_length=title_length,
-                            content_length=content_length,
+    model = TitleContentCNN(title_word_length=title_word_length,
+                            content_word_length=content_word_length,
+                            title_char_length=title_char_length,
+                            content_char_length=content_char_length,
                             class_num=class_num,
-                            embedding_matrix=embedding_matrix,
+                            word_embedding_matrix=word_embedding_matrix,
+                            char_embedding_matrix=char_embedding_matrix,
                             optimizer=optimizer,
                             metrics=metrics)
 
-    que_ids_valid, title_vecs_valid, cont_vecs_valid, label_vecs_valid = load_dataset(
-        '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'valid_fn')),
-        embedding_index,
-        class_num,
-        title_length,
-        content_length)
+    # load title char vectors
+    tc_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char')
+    tc_vecs_off = load_doc_vec(tc_off_fp, char_embedding_matrix, title_char_length, reverse=True)
+    LogUtil.log('INFO', 'load offline title char vector done')
 
+    # load title word vectors
+    tw_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word')
+    tw_vecs_off = load_doc_vec(tw_off_fp, word_embedding_matrix, title_word_length, reverse=False)
+    LogUtil.log('INFO', 'load offline title word vector done')
+
+    # load content char vectors
+    cc_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char')
+    cc_vecs_off = load_doc_vec(cc_off_fp, char_embedding_matrix, content_char_length, reverse=True)
+    LogUtil.log('INFO', 'load offline content char vector done')
+
+    # load content word vectors
+    cw_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word')
+    cw_vecs_off = load_doc_vec(cw_off_fp, word_embedding_matrix, content_word_length, reverse=False)
+    LogUtil.log('INFO', 'load offline content word vector done')
+
+    # load label id vectors
+    lid_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id')
+    lid_vecs_off = load_lid(lid_off_fp, class_num)
+    LogUtil.log('INFO', 'load offline label id vector done')
+
+    # load offline train dataset index
+    train_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                                  config.get('TITLE_CONTENT_CNN', 'train_index_offline_fn'))
+    train_index_off = DataUtil.load_vector(train_index_off_fp, 'int')
+
+    # load offline valid dataset index
+    valid_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                                  config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index_off = DataUtil.load_vector(valid_index_off_fp, 'int')
+
+    # load valid dataset
+    valid_tc_vecs, valid_tw_vecs, valid_cc_vecs, valid_cw_vecs, valid_lid_vecs = load_dataset(tc_vecs_off,
+                                                                                              tw_vecs_off,
+                                                                                              cc_vecs_off,
+                                                                                              cw_vecs_off,
+                                                                                              lid_vecs_off,
+                                                                                              valid_index_off)
+
+    # load train dataset
     part_id = 0
     part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
-    train_fp = '%s/%s' % (config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'train_fn'))
-    for que_ids_train, title_vecs_train, cont_vecs_train, label_vecs_train in load_dataset_loop(train_fp,
-                                                                                                part_size,
-                                                                                                embedding_index,
-                                                                                                class_num,
-                                                                                                title_length,
-                                                                                                content_length):
+    for train_tc_vecs, train_tw_vecs, train_cc_vecs, train_cw_vecs, train_lid_vecs in load_dataset_loop(tc_vecs_off,
+                                                                                                        tw_vecs_off,
+                                                                                                        cc_vecs_off,
+                                                                                                        cw_vecs_off,
+                                                                                                        lid_vecs_off,
+                                                                                                        train_index_off,
+                                                                                                        part_size):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
-        model.fit([title_vecs_train, cont_vecs_train],
-                  label_vecs_train,
-                  validation_data=([title_vecs_valid, cont_vecs_valid], label_vecs_valid),
+        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs],
+                  train_lid_vecs,
+                  validation_data=([valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs], valid_lid_vecs),
                   epochs=1,
                   batch_size=batch_size)
         model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id

@@ -56,17 +56,21 @@ class TitleContentCNN(object):
         cont_char_emb = char_embedding_layer(cont_char_input)
 
         # Create a convolution + max pooling layer
-        title_cont_conv = list()
+        title_content_features = list()
         for win_size in range(2, 6):
-            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(title_word_emb))
-            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_word_emb))
-            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(title_char_emb))
-            title_cont_conv.append(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_char_emb))
-        title_cont_conv = merge(title_cont_conv, mode='concat')
-        title_cont_pool = GlobalMaxPooling1D()(title_cont_conv)
+            # batch_size x doc_len x embed_size
+            title_content_features.append(
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(title_word_emb)))
+            title_content_features.append(
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_word_emb)))
+            title_content_features.append(
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(title_char_emb)))
+            title_content_features.append(
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', border_mode='same')(cont_char_emb)))
+        title_content_features = merge(title_content_features, mode='concat')
 
         # Full connection
-        title_cont_features = Dense(1024, activation='relu')(title_cont_pool)
+        title_cont_features = Dense(1024, activation='relu')(title_content_features)
 
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_cont_features)

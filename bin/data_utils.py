@@ -44,28 +44,13 @@ def load_topic_info(fp):
     dc_list = []
     dw_list = []
     for line in f:
-        subs = line.strip().split('\t')
+        subs = line.strip('\n').split('\t')
         tid_list.append(subs[0])
-        if 1 < len(subs):
-            father_list.append(subs[1].split(','))
-        else:
-            father_list.append([])
-        if 2 < len(subs):
-            tc_list.append(subs[2].split(','))
-        else:
-            tc_list.append([])
-        if 3 < len(subs):
-            tw_list.append(subs[3].split(','))
-        else:
-            tw_list.append([])
-        if 4 < len(subs):
-            dc_list.append(subs[4].split(','))
-        else:
-            dc_list.append([])
-        if 5 < len(subs):
-            dw_list.append(subs[5].split(','))
-        else:
-            dw_list.append([])
+        father_list.append(subs[1].split(','))
+        tc_list.append(subs[2].split(','))
+        tw_list.append(subs[3].split(','))
+        dc_list.append(subs[4].split(','))
+        dw_list.append(subs[5].split(','))
     f.close()
     return tid_list, father_list, tc_list, tw_list, dc_list, dw_list
 

@@ -413,5 +413,5 @@ def main():
 
 
 if __name__ == '__main__':
-    _test()
-    # main()
+    # _test()
+    main()

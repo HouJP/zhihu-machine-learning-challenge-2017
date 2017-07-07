@@ -274,28 +274,28 @@ def generate_tfidf_dataset(config):
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.offline.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(tc_offline[line_id], char_idf, key_chars, title_char_length))
+        line = '%s\n' % ','.join(tfidf_filter(tc_offline[line_id], char_idf, key_chars, title_char_length * 0.85))
         f.write(line)
     f.close()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.offline.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(tw_offline[line_id], word_idf, key_words, title_word_length))
+        line = '%s\n' % ','.join(tfidf_filter(tw_offline[line_id], word_idf, key_words, title_word_length * 0.85))
         f.write(line)
     f.close()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.offline.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(dc_offline[line_id], char_idf, key_chars, content_char_length))
+        line = '%s\n' % ','.join(tfidf_filter(dc_offline[line_id], char_idf, key_chars, content_char_length * 0.85))
         f.write(line)
     f.close()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.offline.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(dw_offline[line_id], word_idf, key_words, content_word_length))
+        line = '%s\n' % ','.join(tfidf_filter(dw_offline[line_id], word_idf, key_words, content_word_length * 0.85))
         f.write(line)
     f.close()
 
@@ -305,28 +305,28 @@ def generate_tfidf_dataset(config):
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.online.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(tc_online[line_id], char_idf, key_chars, title_char_length))
+        line = '%s\n' % ','.join(tfidf_filter(tc_online[line_id], char_idf, key_chars, title_char_length * 0.85))
         f.write(line)
     f.close()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.online.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(tw_online[line_id], word_idf, key_words, title_word_length))
+        line = '%s\n' % ','.join(tfidf_filter(tw_online[line_id], word_idf, key_words, title_word_length * 0.85))
         f.write(line)
     f.close()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.online.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(dc_online[line_id], char_idf, key_chars, content_char_length))
+        line = '%s\n' % ','.join(tfidf_filter(dc_online[line_id], char_idf, key_chars, content_char_length * 0.85))
         f.write(line)
     f.close()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.online.csv'
     f = open(file_path, 'w')
     for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(dw_online[line_id], word_idf, key_words, content_word_length))
+        line = '%s\n' % ','.join(tfidf_filter(dw_online[line_id], word_idf, key_words, content_word_length * 0.85))
         f.write(line)
     f.close()
 

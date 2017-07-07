@@ -281,22 +281,22 @@ def generate_tfidf_dataset(config):
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.offline.csv'
     processor_tc_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, tc_offline, char_idf, key_chars, title_char_length * 0.85))
+        file_path, qid_offline, tc_offline, char_idf, key_chars, title_char_length * 0.85))
     processor_tc_offline.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.offline.csv'
     processor_tw_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, tw_offline, word_idf, key_words, title_word_length * 0.85))
+        file_path, qid_offline, tw_offline, word_idf, key_words, title_word_length * 0.85))
     processor_tw_offline.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.offline.csv'
     processor_cc_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, dc_offline, char_idf, key_chars, content_char_length * 0.85))
+        file_path, qid_offline, dc_offline, char_idf, key_chars, content_char_length * 0.85))
     processor_cc_offline.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.offline.csv'
     processor_cw_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, dw_offline, word_idf, key_words, content_word_length * 0.85))
+        file_path, qid_offline, dw_offline, word_idf, key_words, content_word_length * 0.85))
     processor_cw_offline.start()
 
     question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
@@ -304,22 +304,22 @@ def generate_tfidf_dataset(config):
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.online.csv'
     processor_tc_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, tc_online, char_idf, key_chars, title_char_length * 0.85))
+        file_path, qid_online, tc_online, char_idf, key_chars, title_char_length * 0.85))
     processor_tc_online.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.online.csv'
     processor_tw_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, tw_online, word_idf, key_words, title_word_length * 0.85))
+        file_path, qid_online, tw_online, word_idf, key_words, title_word_length * 0.85))
     processor_tw_online.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.online.csv'
     processor_cc_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, dc_online, char_idf, key_chars, content_char_length * 0.85))
+        file_path, qid_online, dc_online, char_idf, key_chars, content_char_length * 0.85))
     processor_cc_online.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.online.csv'
     processor_cw_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
-        file_path, dw_online, word_idf, key_words, content_word_length * 0.85))
+        file_path, qid_online, dw_online, word_idf, key_words, content_word_length * 0.85))
     processor_cw_online.start()
 
     print("The number of CPU is:" + str(multiprocessing.cpu_count()))

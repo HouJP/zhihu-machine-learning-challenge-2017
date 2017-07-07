@@ -76,7 +76,8 @@ def predict(config, part_id):
     qid_on = DataUtil.load_vector(qid_on_fp, 'str')
     LogUtil.log('INFO', 'load online question ID done')
 
-    tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on, _ = load_dataset(tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on, [],
+    tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on, _ = load_dataset(tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on,
+                                                                     None,
                                                                      range(len(qid_on)))
 
     # load hash table of label

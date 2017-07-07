@@ -87,11 +87,11 @@ def load_lid(file_path, class_num):
 
 
 def load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds):
-    sub_tc_vecs = np.asarray([tc_vecs[ind] for ind in inds], dtype='int32')
-    sub_tw_vecs = np.asarray([tw_vecs[ind] for ind in inds], dtype='int32')
-    sub_cc_vecs = np.asarray([cc_vecs[ind] for ind in inds], dtype='int32')
-    sub_cw_vecs = np.asarray([cw_vecs[ind] for ind in inds], dtype='int32')
-    sub_lid_vecs = np.asarray([lid_vecs[ind] for ind in inds], dtype='int32')
+    sub_tc_vecs = None if tc_vecs is None else np.asarray([tc_vecs[ind] for ind in inds], dtype='int32')
+    sub_tw_vecs = None if tw_vecs is None else np.asarray([tw_vecs[ind] for ind in inds], dtype='int32')
+    sub_cc_vecs = None if cc_vecs is None else np.asarray([cc_vecs[ind] for ind in inds], dtype='int32')
+    sub_cw_vecs = None if cw_vecs is None else np.asarray([cw_vecs[ind] for ind in inds], dtype='int32')
+    sub_lid_vecs = None if lid_vecs is None else np.asarray([lid_vecs[ind] for ind in inds], dtype='int32')
     return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs
 
 

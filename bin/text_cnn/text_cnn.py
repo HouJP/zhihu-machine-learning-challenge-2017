@@ -20,6 +20,7 @@ class TitleContentCNN(object):
                  title_char_length,
                  content_char_length,
                  class_num,
+                 filter_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
                  optimizer,
@@ -30,6 +31,7 @@ class TitleContentCNN(object):
         self.title_char_length = title_char_length
         self.content_char_length = content_char_length
         self.class_num = class_num
+        self.filter_num = filter_num
         self.word_embedding_matrix = word_embedding_matrix
         self.char_embedding_matrix = char_embedding_matrix
         self.optimizer = optimizer
@@ -61,13 +63,13 @@ class TitleContentCNN(object):
         for win_size in range(2, 6):
             # batch_size x doc_len x embed_size
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(filter_num, win_size, activation='relu', padding='same')(title_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(filter_num, win_size, activation='relu', padding='same')(cont_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(filter_num, win_size, activation='relu', padding='same')(title_char_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(filter_num, win_size, activation='relu', padding='same')(cont_char_emb)))
         title_content_features = concatenate(title_content_features)
 
         # Full connection

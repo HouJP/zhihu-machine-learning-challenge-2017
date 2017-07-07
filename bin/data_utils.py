@@ -5,10 +5,11 @@
 # @Email   : houjp1992@gmail.com
 
 import ConfigParser
-from utils import DataUtil
+from utils import DataUtil, LogUtil
 import sys
 import json
 import math
+import multiprocessing
 
 
 def load_question_set(fp):
@@ -250,10 +251,16 @@ def load_idf(file_path):
     return idf
 
 
-def generate_tfidf_dataset(config):
-    label2id_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'label2id_fn'))
-    label2id = json.load(open(label2id_fp, 'r'))
+def generate_single_tfidf_dataset(file_path, qid, docs, idf, key_words, length):
+    f = open(file_path, 'w')
+    for line_id in range(len(qid)):
+        line = '%s\n' % ','.join(tfidf_filter(docs[line_id], idf, key_words, int(length)))
+        f.write(line)
+    f.close()
+    LogUtil.log('INFO', 'generate_single_tfidf_dataset (%s) done' % file_path)
 
+
+def generate_tfidf_dataset(config):
     title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
     title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
@@ -273,63 +280,49 @@ def generate_tfidf_dataset(config):
     qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.offline.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(tc_offline[line_id], char_idf, key_chars, title_char_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_tc_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, tc_offline, char_idf, key_chars, title_char_length * 0.85))
+    processor_tc_offline.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.offline.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(tw_offline[line_id], word_idf, key_words, title_word_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_tw_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, tw_offline, word_idf, key_words, title_word_length * 0.85))
+    processor_tw_offline.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.offline.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(dc_offline[line_id], char_idf, key_chars, content_char_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_cc_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, dc_offline, char_idf, key_chars, content_char_length * 0.85))
+    processor_cc_offline.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.offline.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_offline)):
-        line = '%s\n' % ','.join(tfidf_filter(dw_offline[line_id], word_idf, key_words, content_word_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_cw_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, dw_offline, word_idf, key_words, content_word_length * 0.85))
+    processor_cw_offline.start()
 
     question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
     qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.online.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(tc_online[line_id], char_idf, key_chars, title_char_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_tc_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, tc_online, char_idf, key_chars, title_char_length * 0.85))
+    processor_tc_online.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.online.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(tw_online[line_id], word_idf, key_words, title_word_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_tw_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, tw_online, word_idf, key_words, title_word_length * 0.85))
+    processor_tw_online.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.online.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(dc_online[line_id], char_idf, key_chars, content_char_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_cc_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, dc_online, char_idf, key_chars, content_char_length * 0.85))
+    processor_cc_online.start()
 
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.online.csv'
-    f = open(file_path, 'w')
-    for line_id in range(len(qid_online)):
-        line = '%s\n' % ','.join(tfidf_filter(dw_online[line_id], word_idf, key_words, content_word_length * 0.85))
-        f.write(line)
-    f.close()
+    processor_cw_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, dw_online, word_idf, key_words, content_word_length * 0.85))
+    processor_cw_online.start()
+
+    print("The number of CPU is:" + str(multiprocessing.cpu_count()))
 
 
 def generate_idf(config):
@@ -395,9 +388,9 @@ def _test_load_topic_info(cf):
 def _test_filter(config):
     words = ['w111', 'w239', 'w23', 'w23', '']
     idf = {'w111': 0.132694279836, 'w239': 2.23717513726, 'w23': 1.5, '': 20}
-    key_words = set(['w111'])
+    key_words = set(['w23'])
     length = 2
-    print filter(words, idf, key_words, length)
+    print tfidf_filter(words, idf, key_words, length)
 
 
 def _test():
@@ -420,5 +413,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # _test()
-    main()
+    _test()
+    # main()

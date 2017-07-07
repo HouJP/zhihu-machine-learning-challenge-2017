@@ -240,6 +240,21 @@ def generate_idf(config):
     word_idf = ['%s\t%s' % (str(kv[0]), str(kv[1])) for kv in sorted(word_idf.items(), lambda x, y: cmp(x[1], y[1]))]
     DataUtil.save_vector(word_idf_fp, word_idf, 'w')
 
+    char_idf = {}
+    for i in range(len(qid_offline)):
+        for char in set(tc_offline[i] + dc_offline[i]):
+            char_idf[char] = char_idf.get(char, 0) + 1
+    for i in range(len(qid_online)):
+        for char in set(tc_online[i] + dc_online[i]):
+            char_idf[char] = char_idf.get(char, 0) + 1
+    tol_num = len(qid_offline) + len(qid_online)
+    for char in char_idf:
+        char_idf[char] = math.log(tol_num / (char_idf[char] + 1.)) / math.log(2.)
+
+    char_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'char_idf.txt'
+    char_idf = ['%s\t%s' % (str(kv[0]), str(kv[1])) for kv in sorted(char_idf.items(), lambda x, y: cmp(x[1], y[1]))]
+    DataUtil.save_vector(char_idf_fp, char_idf, 'w')
+
 
 def _test_load_question_set(cf):
     q_train_set = cf.get('DEFAULT', 'source_pt') + '/question_train_set.txt.small'

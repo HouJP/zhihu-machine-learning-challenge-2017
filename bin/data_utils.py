@@ -8,6 +8,7 @@ import ConfigParser
 from utils import DataUtil
 import sys
 import json
+import math
 
 
 def load_question_set(fp):
@@ -216,6 +217,28 @@ def generate_dataset(config):
         line = '%s\n' % ','.join(dw_online[line_id])
         f.write(line)
     f.close()
+
+
+def generate_idf(config):
+    question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
+    question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
+    qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
+
+    word_idf = {}
+    for i in range(len(qid_offline)):
+        for word in set(tw_offline[i] + dw_offline[i]):
+            word_idf[word] = word_idf.get(word, 0) + 1
+    for i in range(len(qid_online)):
+        for word in set(tw_online[i] + dw_online[i]):
+            word_idf[word] = word_idf.get(word, 0) + 1
+    tol_num = len(qid_offline) + len(qid_online)
+    for word in word_idf:
+        word_idf[word] = math.log(tol_num / (word_idf[word] + 1.)) / math.log(2.)
+
+    word_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'word_idf.txt'
+    word_idf = ['%s\t%s' % (str(kv[0]), str(kv[1])) for kv in sorted(word_idf.items(), lambda x, y: cmp(x[1], y[1]))]
+    DataUtil.save_vector(word_idf_fp, word_idf, 'w')
 
 
 def _test_load_question_set(cf):

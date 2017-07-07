@@ -220,6 +220,7 @@ def generate_dataset(config):
 
 
 def tfidf_filter(words, idf, key_words, length):
+    length = int(length)
     words = [word for word in words if len(word)]
     words_need = set()
     not_in_key_words = dict()

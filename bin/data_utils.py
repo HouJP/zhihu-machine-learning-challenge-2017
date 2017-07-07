@@ -219,6 +219,118 @@ def generate_dataset(config):
     f.close()
 
 
+def tfidf_filter(words, idf, key_words, length):
+    words = [word for word in words if len(word)]
+    words_need = set()
+    not_in_key_words = dict()
+    for word in words:
+        if word in key_words:
+            words_need.add(word)
+        else:
+            not_in_key_words[word] = not_in_key_words.get(word, 0.) + 1.
+
+    if len(words_need) < length:
+        for word in not_in_key_words:
+            not_in_key_words[word] *= idf[word]
+        num = min(length - len(words_need), len(not_in_key_words))
+        for kv in sorted(not_in_key_words.items(), lambda x, y: cmp(x[1], y[1]), reverse=True)[:num]:
+            words_need.add(kv[0])
+
+    return [word for word in words if word in words_need]
+
+
+def load_idf(file_path):
+    idf = {}
+    f = open(file_path)
+    for line in f:
+        word, word_idf = line.strip('\n').split('\t')
+        idf[word] = float(word_idf)
+    f.close()
+    return idf
+
+
+def generate_tfidf_dataset(config):
+    label2id_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'label2id_fn'))
+    label2id = json.load(open(label2id_fp, 'r'))
+
+    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
+    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
+    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
+    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+
+    topic_info_fp = config.get('DIRECTORY', 'source_pt') + '/topic_info.txt'
+    tid_list, father_list, tc_list, tw_list, dc_list, dw_list = load_topic_info(topic_info_fp)
+    key_chars = [char for char in sum(tc_list, []) if len(char)]
+    key_words = [word for word in sum(tw_list, []) if len(word)]
+
+    word_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'word_idf.txt'
+    word_idf = load_idf(word_idf_fp)
+    char_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'char_idf.txt'
+    char_idf = load_idf(char_idf_fp)
+
+    question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(tfidf_filter(tc_offline[line_id], char_idf, key_chars, title_char_length))
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(tfidf_filter(tw_offline[line_id], word_idf, key_words, title_word_length))
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(tfidf_filter(dc_offline[line_id], char_idf, key_chars, content_char_length))
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.offline.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_offline)):
+        line = '%s\n' % ','.join(tfidf_filter(dw_offline[line_id], word_idf, key_words, content_word_length))
+        f.write(line)
+    f.close()
+
+    question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
+    qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(tfidf_filter(tc_online[line_id], char_idf, key_chars, title_char_length))
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(tfidf_filter(tw_online[line_id], word_idf, key_words, title_word_length))
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(tfidf_filter(dc_online[line_id], char_idf, key_chars, content_char_length))
+        f.write(line)
+    f.close()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.online.csv'
+    f = open(file_path, 'w')
+    for line_id in range(len(qid_online)):
+        line = '%s\n' % ','.join(tfidf_filter(dw_online[line_id], word_idf, key_words, content_word_length))
+        f.write(line)
+    f.close()
+
+
 def generate_idf(config):
     question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
     qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
@@ -279,13 +391,22 @@ def _test_load_topic_info(cf):
     print dw_list
 
 
+def _test_filter(config):
+    words = ['w111', 'w239', 'w23', 'w23', '']
+    idf = {'w111': 0.132694279836, 'w239': 2.23717513726, 'w23': 1.5, '': 20}
+    key_words = set(['w111'])
+    length = 2
+    print filter(words, idf, key_words, length)
+
+
 def _test():
     conf_fp = '/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/conf/default.conf'
     cf = ConfigParser.ConfigParser()
     cf.read(conf_fp)
 
     # _test_load_question_set(cf)
-    _test_load_topic_info(cf)
+    # _test_load_topic_info(cf)
+    _test_filter(cf)
 
 
 def main():
@@ -298,5 +419,5 @@ def main():
 
 
 if __name__ == '__main__':
-    # _test()
-    main()
+    _test()
+    # main()

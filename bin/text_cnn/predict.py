@@ -62,22 +62,26 @@ def predict(config, part_id):
                             optimizer=optimizer,
                             metrics=metrics)
     # load title char vectors
-    tc_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char')
+    tc_on_fp = '%s/%s.online.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'title_char_fn'))
     tc_vecs_on = load_doc_vec(tc_on_fp, char_embedding_index, title_char_length, reverse=True)
     LogUtil.log('INFO', 'load online title char vector done')
 
     # load title word vectors
-    tw_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word')
+    tw_on_fp = '%s/%s.online.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'title_word_fn'))
     tw_vecs_on = load_doc_vec(tw_on_fp, word_embedding_index, title_word_length, reverse=False)
     LogUtil.log('INFO', 'load online title word vector done')
 
     # load content char vectors
-    cc_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char')
+    cc_on_fp = '%s/%s.online.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'content_char_fn'))
     cc_vecs_on = load_doc_vec(cc_on_fp, char_embedding_index, content_char_length, reverse=True)
     LogUtil.log('INFO', 'load online content char vector done')
 
     # load content word vectors
-    cw_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word')
+    cw_on_fp = '%s/%s.online.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'content_word_fn'))
     cw_vecs_on = load_doc_vec(cw_on_fp, word_embedding_index, content_word_length, reverse=False)
     LogUtil.log('INFO', 'load online content word vector done')
 

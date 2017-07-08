@@ -36,6 +36,10 @@ class TitleContentCNN(object):
         self.content_word_length = content_word_length
         self.title_char_length = title_char_length
         self.content_char_length = content_char_length
+        self.title_word_topk = title_word_topk
+        self.content_word_topk = content_word_topk
+        self.title_char_topk = title_char_topk
+        self.content_char_topk = content_char_topk
         self.class_num = class_num
         self.filter_num = filter_num
         self.word_embedding_matrix = word_embedding_matrix
@@ -73,10 +77,10 @@ class TitleContentCNN(object):
             # batch_size x nb_filter x doc_len
             title_word_conv_swap = Permute((2, 1))(title_word_conv)
             # batch_size x nb_filter x topk
-            title_word_topk = Lambda(lambda y: K.tf.nn.top_k(y, k=title_word_topk)[0],
-                                     output_shape=(filter_num, title_word_topk,))(title_word_conv_swap)
+            title_word_topk_out = Lambda(lambda y: K.tf.nn.top_k(y, k=title_word_topk)[0],
+                                         output_shape=(filter_num, title_word_topk,))(title_word_conv_swap)
             # batch_size x (nb_filter x topk)
-            title_word_flt = Flatten()(title_word_topk)
+            title_word_flt = Flatten()(title_word_topk_out)
             title_content_features.append(title_word_flt)
 
             # batch_size x doc_len x nb_filter
@@ -84,10 +88,10 @@ class TitleContentCNN(object):
             # batch_size x nb_filter x doc_len
             cont_word_conv_swap = Permute((2, 1))(cont_word_conv)
             # batch_size x nb_filter x topk
-            cont_word_topk = Lambda(lambda y: K.tf.nn.top_k(y, k=cont_word_topk)[0],
-                                    output_shape=(filter_num, content_word_topk,))(cont_word_conv_swap)
+            cont_word_topk_out = Lambda(lambda y: K.tf.nn.top_k(y, k=content_word_topk)[0],
+                                        output_shape=(filter_num, content_word_topk,))(cont_word_conv_swap)
             # batch_size x (nb_filter x topk)
-            cont_word_flt = Flatten()(cont_word_topk)
+            cont_word_flt = Flatten()(cont_word_topk_out)
             title_content_features.append(cont_word_flt)
 
             # batch_size x doc_len x nb_filter
@@ -95,10 +99,10 @@ class TitleContentCNN(object):
             # batch_size x nb_filter x doc_len
             title_char_conv_swap = Permute((2, 1))(title_char_conv)
             # batch_size x nb_filter x topk
-            title_char_topk = Lambda(lambda y: K.tf.nn.top_k(y, k=title_char_topk)[0],
-                                     output_shape=(filter_num, title_char_topk,))(title_char_conv_swap)
+            title_char_topk_out = Lambda(lambda y: K.tf.nn.top_k(y, k=title_char_topk)[0],
+                                         output_shape=(filter_num, title_char_topk,))(title_char_conv_swap)
             # batch_size x (nb_filter x topk)
-            title_char_flt = Flatten()(title_char_topk)
+            title_char_flt = Flatten()(title_char_topk_out)
             title_content_features.append(title_char_flt)
 
             # batch_size x doc_len x nb_filter
@@ -106,10 +110,10 @@ class TitleContentCNN(object):
             # batch_size x nb_filter x doc_len
             cont_char_conv_swap = Permute((2, 1))(cont_char_conv)
             # batch_size x nb_filter x topk
-            cont_char_topk = Lambda(lambda y: K.tf.nn.top_k(y, k=cont_char_topk)[0],
-                                    output_shape=(filter_num, content_char_topk,))(cont_char_conv_swap)
+            cont_char_topk_out = Lambda(lambda y: K.tf.nn.top_k(y, k=content_char_topk)[0],
+                                        output_shape=(filter_num, content_char_topk,))(cont_char_conv_swap)
             # batch_size x (nb_filter x topk)
-            cont_char_flt = Flatten()(cont_char_topk)
+            cont_char_flt = Flatten()(cont_char_topk_out)
             title_content_features.append(cont_char_flt)
 
         title_content_features = concatenate(title_content_features)

@@ -39,14 +39,24 @@ def predict(config, part_id):
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
     title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+    title_word_topk = config.getint('TITLE_CONTENT_CNN', 'title_word_topk')
+    content_word_topk = config.getint('TITLE_CONTENT_CNN', 'content_word_topk')
+    title_char_topk = config.getint('TITLE_CONTENT_CNN', 'title_char_topk')
+    content_char_topk = config.getint('TITLE_CONTENT_CNN', 'content_char_topk')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+    filter_num = config.getint('TITLE_CONTENT_CNN', 'filter_num')
     optimizer = config.get('TITLE_CONTENT_CNN', 'optimizer')
     metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
     model = TitleContentCNN(title_word_length=title_word_length,
                             content_word_length=content_word_length,
                             title_char_length=title_char_length,
                             content_char_length=content_char_length,
+                            title_word_topk=title_word_topk,
+                            content_word_topk=content_word_topk,
+                            title_char_topk=title_char_topk,
+                            content_char_topk=content_char_topk,
                             class_num=class_num,
+                            filter_num=filter_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
                             optimizer=optimizer,

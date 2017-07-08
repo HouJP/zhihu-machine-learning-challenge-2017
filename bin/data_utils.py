@@ -220,7 +220,7 @@ def generate_dataset(config):
     f.close()
 
 
-def tfidf_filter(words, idf, key_words, length):
+def tfidf_filter(words, idf, key_words, length, useless_words=set()):
     length = int(length)
     words = [word for word in words if len(word)]
     words_need = set()
@@ -228,7 +228,7 @@ def tfidf_filter(words, idf, key_words, length):
     for word in words:
         if word in key_words:
             words_need.add(word)
-        else:
+        elif word not in useless_words:
             not_in_key_words[word] = not_in_key_words.get(word, 0.) + 1.
 
     if len(words_need) < length:
@@ -251,13 +251,26 @@ def load_idf(file_path):
     return idf
 
 
-def generate_single_tfidf_dataset(file_path, qid, docs, idf, key_words, length):
+def generate_single_tfidf_dataset(file_path, qid, docs, idf, key_words, length, useless=set()):
+    max_len = 0
+    min_len = sys.maxint
+    ave_len = 0
+
     f = open(file_path, 'w')
     for line_id in range(len(qid)):
-        line = '%s\n' % ','.join(tfidf_filter(docs[line_id], idf, key_words, int(length)))
+        vec = tfidf_filter(docs[line_id], idf, key_words, int(length), useless)
+        line = '%s\n' % ','.join(vec)
         f.write(line)
+        vec_len = len(vec)
+        max_len = max(max_len, vec_len)
+        min_len = min(min_len, vec_len)
+        ave_len += vec_len
+    ave_len /= (1. * len(qid))
     f.close()
     LogUtil.log('INFO', 'generate_single_tfidf_dataset (%s) done' % file_path)
+    LogUtil.log('INFO', 'max_len=%d' % max_len)
+    LogUtil.log('INFO', 'min_len=%d' % min_len)
+    LogUtil.log('INFO', 'ave_len=%d' % ave_len)
 
 
 def generate_tfidf_dataset(config):
@@ -320,6 +333,76 @@ def generate_tfidf_dataset(config):
     file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf.online.csv'
     processor_cw_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
         file_path, qid_online, dw_online, word_idf, key_words, content_word_length * 0.85))
+    processor_cw_online.start()
+
+    print("The number of CPU is:" + str(multiprocessing.cpu_count()))
+
+
+def generate_tfidf_useless_dataset(config):
+    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
+    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
+    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
+    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+
+    topic_info_fp = config.get('DIRECTORY', 'source_pt') + '/topic_info.txt'
+    tid_list, father_list, tc_list, tw_list, dc_list, dw_list = load_topic_info(topic_info_fp)
+    key_chars = [char for char in sum(tc_list, []) if len(char)]
+    key_words = [word for word in sum(tw_list, []) if len(word)]
+
+    word_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'word_idf.txt'
+    word_idf = load_idf(word_idf_fp)
+    char_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'char_idf.txt'
+    char_idf = load_idf(char_idf_fp)
+
+    useless_words = [kv[0] for kv in sorted(word_idf.items(), lambda x, y: cmp(x[1], y[1]))[:int(0.1 * len(word_idf))]
+                     if kv[0] not in key_words]
+    useless_chars = [kv[0] for kv in sorted(char_idf.items(), lambda x, y: cmp(x[1], y[1]))[:int(0.1 * len(char_idf))]
+                     if kv[0] not in key_chars]
+
+    question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf_useless.offline.csv'
+    processor_tc_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_offline, tc_offline, char_idf, key_chars, title_char_length * 0.85, useless_chars))
+    processor_tc_offline.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf_useless.offline.csv'
+    processor_tw_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_offline, tw_offline, word_idf, key_words, title_word_length * 0.85, useless_words))
+    processor_tw_offline.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf_useless.offline.csv'
+    processor_cc_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_offline, dc_offline, char_idf, key_chars, content_char_length * 0.85, useless_chars))
+    processor_cc_offline.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf_useless.offline.csv'
+    processor_cw_offline = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_offline, dw_offline, word_idf, key_words, content_word_length * 0.85, useless_words))
+    processor_cw_offline.start()
+
+    question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
+    qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_tfidf_useless.online.csv'
+    processor_tc_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_online, tc_online, char_idf, key_chars, title_char_length * 0.85, useless_chars))
+    processor_tc_online.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_tfidf_useless.online.csv'
+    processor_tw_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_online, tw_online, word_idf, key_words, title_word_length * 0.85, useless_words))
+    processor_tw_online.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_tfidf_useless.online.csv'
+    processor_cc_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_online, dc_online, char_idf, key_chars, content_char_length * 0.85, useless_chars))
+    processor_cc_online.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_tfidf_useless.online.csv'
+    processor_cw_online = multiprocessing.Process(target=generate_single_tfidf_dataset, args=(
+        file_path, qid_online, dw_online, word_idf, key_words, content_word_length * 0.85, useless_words))
     processor_cw_online.start()
 
     print("The number of CPU is:" + str(multiprocessing.cpu_count()))

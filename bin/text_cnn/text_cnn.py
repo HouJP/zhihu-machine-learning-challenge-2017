@@ -78,7 +78,7 @@ class TitleContentCNN(object):
 
         self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input], preds)
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
-        # self._model.summary()
+        self._model.summary()
 
     def save(self, model_fp):
         model_json = self._model.to_json()
@@ -97,6 +97,7 @@ class TitleContentCNN(object):
         self._model.load_weights('%s.h5' % model_fp)
         # compile model
         self._model.compile(loss=binary_crossentropy_sum, optimizer=self.optimizer, metrics=self.metrics)
+        self._model.summary()
         LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)
 
     def fit(self, x, y, batch_size=32, epochs=1, validation_data=None):

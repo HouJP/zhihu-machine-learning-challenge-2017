@@ -9,6 +9,7 @@ import ConfigParser
 import data_utils
 import logging
 import sys
+import math
 
 
 def save_question_topic_info(cf):
@@ -52,7 +53,10 @@ def btm2standard_format(config, argv):
     btm_f.write('%d 100\n' % line_num)
     ind = 0
     for line in tmp_f:
-        btm_f.write('%d %s' % (ind, line))
+        subs = line.strip().split()
+        subs = [1. / 100 if math.isnan(float(num)) else float(num) for num in subs]
+        subs = ['%s' % num for num in subs]
+        btm_f.write('%d %s\n' % (ind, ' '.join(subs)))
         ind += 1
 
     tmp_f.close()

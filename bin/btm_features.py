@@ -59,6 +59,21 @@ def btm2standard_format(config, argv):
     btm_f.close()
 
 
+def generate_btm_csv(config, argv):
+    btm_off_f = open('%s/btm.offline.csv' % config.get('DIRECTORY', 'dataset_pt'), 'w')
+    btm_on_f = open('%s/btm.online.csv' % config.get('DIRECTORY', 'dataset_pt'), 'w')
+
+    off_num = 2999967
+    on_num = 217360
+    for i in range(off_num):
+        btm_off_f.write('%d\n' % i)
+    for i in range(off_num, off_num + on_num):
+        btm_on_f.write('%d\n' % i)
+
+    btm_off_f.close()
+    btm_on_f.close()
+
+
 def main(argv):
     conf_fp = argv[1]
     cf = ConfigParser.ConfigParser()

@@ -60,12 +60,12 @@ def btm2standard_format(config, argv):
 
 
 def main(argv):
-    conf_fp = '/home/houjianpeng/zhihu-machine-learning-challenge-2017/conf/default.conf'
+    conf_fp = argv[0]
     cf = ConfigParser.ConfigParser()
     cf.read(conf_fp)
-    func = argv[0]
+    func = argv[1]
 
-    eval(func)(cf, argv[1:])
+    eval(func)(cf, argv[2:])
 
 
 if __name__ == '__main__':

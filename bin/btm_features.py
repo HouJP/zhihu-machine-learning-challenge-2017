@@ -60,12 +60,12 @@ def btm2standard_format(config, argv):
 
 
 def main(argv):
-    conf_fp = argv[0]
+    conf_fp = argv[1]
     cf = ConfigParser.ConfigParser()
     cf.read(conf_fp)
-    func = argv[1]
+    func = argv[2]
 
-    eval(func)(cf, argv[2:])
+    eval(func)(cf, argv[3:])
 
 
 if __name__ == '__main__':

@@ -34,6 +34,10 @@ def predict(config, part_id):
     char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
                                    config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
     char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
+    # load btm embedding file
+    btm_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                  config.get('TITLE_CONTENT_CNN', 'btm_embedding_fn'))
+    btm_embedding_index, btm_embedding_matrix = load_embedding(btm_embedding_fp)
     # init model
     title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
@@ -49,6 +53,7 @@ def predict(config, part_id):
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
+                            btm_embedding_matrix=btm_embedding_matrix,
                             optimizer=optimizer,
                             metrics=metrics)
     # load title char vectors
@@ -71,14 +76,21 @@ def predict(config, part_id):
     cw_vecs_on = load_doc_vec(cw_on_fp, word_embedding_index, content_word_length, reverse=False)
     LogUtil.log('INFO', 'load online content word vector done')
 
+    # load btm vectors
+    btm_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm')
+    btm_vecs_on = load_doc_vec(btm_on_fp, btm_embedding_index, 1, reverse=False)
+    LogUtil.log('INFO', 'load online btm vector done')
+
     # load question ID
     qid_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'question_id')
     qid_on = DataUtil.load_vector(qid_on_fp, 'str')
     LogUtil.log('INFO', 'load online question ID done')
 
-    tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on, _ = load_dataset(tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on,
-                                                                     None,
-                                                                     range(len(qid_on)))
+    tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on, btm_vecs_on, _ = load_dataset(tc_vecs_on, tw_vecs_on, cc_vecs_on,
+                                                                                  cw_vecs_on,
+                                                                                  btm_vecs_on,
+                                                                                  None,
+                                                                                  range(len(qid_on)))
 
     # load hash table of label
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
@@ -88,7 +100,8 @@ def predict(config, part_id):
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
     model.load(model_fp)
-    preds = model.predict([tw_vecs_on, cw_vecs_on, tc_vecs_on, cc_vecs_on], batch_size=batch_size, verbose=True)
+    preds = model.predict([tw_vecs_on, cw_vecs_on, tc_vecs_on, cc_vecs_on, btm_vecs_on], batch_size=batch_size,
+                          verbose=True)
     LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(preds.shape))
     # save prediction
     pred_fp = '%s/pred.csv' % config.get('DIRECTORY', 'pred_pt')

@@ -22,6 +22,7 @@ class TitleContentCNN(object):
                  class_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
+                 btm_embedding_matrix,
                  optimizer,
                  metrics):
         # set attributes
@@ -32,6 +33,7 @@ class TitleContentCNN(object):
         self.class_num = class_num
         self.word_embedding_matrix = word_embedding_matrix
         self.char_embedding_matrix = char_embedding_matrix
+        self.btm_embedding_matrix = btm_embedding_matrix
         self.optimizer = optimizer
         self.metrics = metrics
         # Placeholder for input (title and content)
@@ -40,6 +42,8 @@ class TitleContentCNN(object):
 
         title_char_input = Input(shape=(title_char_length,), dtype='int32', name="title_char_input")
         cont_char_input = Input(shape=(content_char_length,), dtype='int32', name="content_char_input")
+
+        btm_input = Input(shape=(1,), dtype='int32', name="btm_input")
 
         # Embedding layer
         word_embedding_layer = Embedding(len(word_embedding_matrix),
@@ -56,6 +60,12 @@ class TitleContentCNN(object):
         title_char_emb = char_embedding_layer(title_char_input)
         cont_char_emb = char_embedding_layer(cont_char_input)
 
+        btm_embedding_layer = Embedding(len(btm_embedding_matrix),
+                                        100,
+                                        weights=[btm_embedding_matrix],
+                                        trainable=True, name='btm_embedding')
+        btm_emb = btm_embedding_layer(btm_input)
+
         # Create a convolution + max pooling layer
         title_content_features = list()
         for win_size in range(2, 6):
@@ -68,6 +78,8 @@ class TitleContentCNN(object):
                 GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_char_emb)))
             title_content_features.append(
                 GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_char_emb)))
+        title_content_features.append(
+            GlobalMaxPooling1D()(Conv1D(128, 1, activation='relu', padding='same')(btm_emb)))
         title_content_features = concatenate(title_content_features)
 
         # Full connection
@@ -76,7 +88,7 @@ class TitleContentCNN(object):
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_cont_features)
 
-        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input], preds)
+        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input, btm_input], preds)
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
         self._model.summary()
 

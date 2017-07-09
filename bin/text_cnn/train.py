@@ -46,6 +46,10 @@ def train(config):
     char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
                                    config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
     char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
+    # load btm embedding file
+    btm_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                  config.get('TITLE_CONTENT_CNN', 'btm_embedding_fn'))
+    btm_embedding_index, btm_embedding_matrix = load_embedding(btm_embedding_fp)
     # init model
     title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
@@ -61,6 +65,7 @@ def train(config):
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
+                            btm_embedding_matrix=btm_embedding_matrix,
                             optimizer=optimizer,
                             metrics=metrics)
 
@@ -84,6 +89,11 @@ def train(config):
     cw_vecs_off = load_doc_vec(cw_off_fp, word_embedding_index, content_word_length, reverse=False)
     LogUtil.log('INFO', 'load offline content word vector done')
 
+    # load btm vectors
+    btm_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm')
+    btm_vecs_off = load_doc_vec(btm_off_fp, btm_embedding_index, 1, reverse=False)
+    LogUtil.log('INFO', 'load offline btm vector done')
+
     # load label id vectors
     lid_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id')
     lid_vecs_off = load_lid(lid_off_fp, class_num)
@@ -100,28 +110,26 @@ def train(config):
     valid_index_off = DataUtil.load_vector(valid_index_off_fp, 'int')
 
     # load valid dataset
-    valid_tc_vecs, valid_tw_vecs, valid_cc_vecs, valid_cw_vecs, valid_lid_vecs = load_dataset(tc_vecs_off,
-                                                                                              tw_vecs_off,
-                                                                                              cc_vecs_off,
-                                                                                              cw_vecs_off,
-                                                                                              lid_vecs_off,
-                                                                                              valid_index_off)
+    valid_tc_vecs, valid_tw_vecs, valid_cc_vecs, valid_cw_vecs, valid_btm_vecs, valid_lid_vecs = load_dataset(
+        tc_vecs_off,
+        tw_vecs_off,
+        cc_vecs_off,
+        cw_vecs_off,
+        btm_vecs_off,
+        lid_vecs_off,
+        valid_index_off)
 
     # load train dataset
     part_id = 0
     part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
-    for train_tc_vecs, train_tw_vecs, train_cc_vecs, train_cw_vecs, train_lid_vecs in load_dataset_loop(tc_vecs_off,
-                                                                                                        tw_vecs_off,
-                                                                                                        cc_vecs_off,
-                                                                                                        cw_vecs_off,
-                                                                                                        lid_vecs_off,
-                                                                                                        train_index_off,
-                                                                                                        part_size):
+    for train_tc_vecs, train_tw_vecs, train_cc_vecs, train_cw_vecs, train_btm_vecs, train_lid_vecs in load_dataset_loop(
+            tc_vecs_off, tw_vecs_off, cc_vecs_off, cw_vecs_off, btm_vecs_off, lid_vecs_off, train_index_off, part_size):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
-        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs],
+        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_vecs],
                   train_lid_vecs,
-                  validation_data=([valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs], valid_lid_vecs),
+                  validation_data=(
+                  [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_vecs], valid_lid_vecs),
                   epochs=1,
                   batch_size=batch_size)
         model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id

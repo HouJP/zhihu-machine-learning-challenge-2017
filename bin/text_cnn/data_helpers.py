@@ -86,16 +86,17 @@ def load_lid(file_path, class_num):
     return [parse_lid_vec(line, class_num) for line in open(file_path).readlines()]
 
 
-def load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds):
+def load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, btm_vecs, lid_vecs, inds):
     sub_tc_vecs = None if tc_vecs is None else np.asarray([tc_vecs[ind] for ind in inds], dtype='int32')
     sub_tw_vecs = None if tw_vecs is None else np.asarray([tw_vecs[ind] for ind in inds], dtype='int32')
     sub_cc_vecs = None if cc_vecs is None else np.asarray([cc_vecs[ind] for ind in inds], dtype='int32')
     sub_cw_vecs = None if cw_vecs is None else np.asarray([cw_vecs[ind] for ind in inds], dtype='int32')
+    sub_btm_vecs = None if cw_vecs is None else np.asarray([btm_vecs[ind] for ind in inds], dtype='int32')
     sub_lid_vecs = None if lid_vecs is None else np.asarray([lid_vecs[ind] for ind in inds], dtype='int32')
-    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_btm_vecs, sub_lid_vecs
 
 
-def load_dataset_loop(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds, part_size):
+def load_dataset_loop(tc_vecs, tw_vecs, cc_vecs, cw_vecs, btm_vecs, lid_vecs, inds, part_size):
     count = 0
     inds_len = len(inds)
     inds_part = list()
@@ -103,7 +104,7 @@ def load_dataset_loop(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds, part_s
         count += 1
         inds_part.append(inds[count % inds_len])
         if 0 == count % part_size:
-            yield load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, lid_vecs, inds_part)
+            yield load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, btm_vecs, lid_vecs, inds_part)
             inds_part = list()
 
 

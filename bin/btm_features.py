@@ -8,6 +8,7 @@
 import ConfigParser
 import data_utils
 import logging
+import sys
 
 
 def save_question_topic_info(cf):
@@ -43,14 +44,30 @@ def save_question_topic_info(cf):
     f.close()
 
 
-def main():
+def btm2standard_format(config, argv):
+    tmp_f = open('%s/btm_embedding.tmp' % config.get('DIRECTORY', 'embedding_pt'), 'r')
+    btm_f = open('%s/btm_embedding.txt' % config.get('DIRECTORY', 'embedding_pt'), 'w')
+
+    line_num = 3219326
+    btm_f.write('%d 100\n' % line_num)
+    ind = 0
+    for line in tmp_f:
+        btm_f.write('%d %s' % (ind, line))
+        ind += 1
+
+    tmp_f.close()
+    btm_f.close()
+
+
+def main(argv):
     conf_fp = '/home/houjianpeng/zhihu-machine-learning-challenge-2017/conf/default.conf'
     cf = ConfigParser.ConfigParser()
     cf.read(conf_fp)
+    func = argv[0]
 
-    save_question_topic_info(cf)
+    eval(func)(cf, argv[1:])
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
 

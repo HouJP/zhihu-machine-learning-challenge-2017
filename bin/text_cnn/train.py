@@ -46,15 +46,12 @@ def train(config):
     char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
                                    config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
     char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
-    # load btm embedding file
-    btm_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
-                                  config.get('TITLE_CONTENT_CNN', 'btm_embedding_fn'))
-    btm_embedding_index, btm_embedding_matrix = load_embedding(btm_embedding_fp)
     # init model
     title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
     title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+    btm_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_vector_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer = config.get('TITLE_CONTENT_CNN', 'optimizer')
     metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
@@ -62,10 +59,10 @@ def train(config):
                             content_word_length=content_word_length,
                             title_char_length=title_char_length,
                             content_char_length=content_char_length,
+                            btm_vector_length=btm_vector_length,
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
-                            btm_embedding_matrix=btm_embedding_matrix,
                             optimizer=optimizer,
                             metrics=metrics)
 
@@ -91,7 +88,7 @@ def train(config):
 
     # load btm vectors
     btm_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm')
-    btm_vecs_off = load_doc_vec(btm_off_fp, btm_embedding_index, 1, reverse=False)
+    btm_vecs_off = load_feature_vec(btm_off_fp)
     LogUtil.log('INFO', 'load offline btm vector done')
 
     # load label id vectors

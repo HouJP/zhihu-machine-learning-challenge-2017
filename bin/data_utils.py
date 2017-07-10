@@ -5,9 +5,11 @@
 # @Email   : houjp1992@gmail.com
 
 import ConfigParser
-from utils import DataUtil
+from utils import DataUtil, LogUtil
 import sys
 import json
+import math
+import multiprocessing
 
 
 def load_question_set(fp):
@@ -231,6 +233,140 @@ def generate_dataset(config):
         line = '%s\n' % ','.join(dw_online[line_id])
         f.write(line)
     f.close()
+
+
+def load_idf(file_path):
+    idf = {}
+    f = open(file_path)
+    for line in f:
+        word, word_idf = line.strip('\n').split('\t')
+        idf[word] = float(word_idf)
+    f.close()
+    return idf
+
+
+def generate_idf(config):
+    question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
+    question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
+    qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
+
+    word_idf = {}
+    for i in range(len(qid_offline)):
+        for word in set(tw_offline[i] + dw_offline[i]):
+            word_idf[word] = word_idf.get(word, 0) + 1
+    for i in range(len(qid_online)):
+        for word in set(tw_online[i] + dw_online[i]):
+            word_idf[word] = word_idf.get(word, 0) + 1
+    tol_num = len(qid_offline) + len(qid_online)
+    for word in word_idf:
+        word_idf[word] = math.log(tol_num / (word_idf[word] + 1.)) / math.log(2.)
+
+    word_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'word_idf.txt'
+    word_idf = ['%s\t%s' % (str(kv[0]), str(kv[1])) for kv in sorted(word_idf.items(), lambda x, y: cmp(x[1], y[1]))]
+    DataUtil.save_vector(word_idf_fp, word_idf, 'w')
+
+    char_idf = {}
+    for i in range(len(qid_offline)):
+        for char in set(tc_offline[i] + dc_offline[i]):
+            char_idf[char] = char_idf.get(char, 0) + 1
+    for i in range(len(qid_online)):
+        for char in set(tc_online[i] + dc_online[i]):
+            char_idf[char] = char_idf.get(char, 0) + 1
+    tol_num = len(qid_offline) + len(qid_online)
+    for char in char_idf:
+        char_idf[char] = math.log(tol_num / (char_idf[char] + 1.)) / math.log(2.)
+
+    char_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'char_idf.txt'
+    char_idf = ['%s\t%s' % (str(kv[0]), str(kv[1])) for kv in sorted(char_idf.items(), lambda x, y: cmp(x[1], y[1]))]
+    DataUtil.save_vector(char_idf_fp, char_idf, 'w')
+
+
+def idf_filter(words, idf, min_idf, max_idf):
+    return [word for word in words if min_idf < idf[word] < max_idf]
+
+
+def generate_single_idf_dataset(file_path, qid, docs, idf):
+    max_len = 0
+    min_len = sys.maxint
+    ave_len = 0
+
+    tol_num = 2999967. + 217360.
+    min_idf = math.log(tol_num / (200000. + 1.)) / math.log(2.)
+    max_idf = math.log(tol_num / (40. + 1.)) / math.log(2.)
+    LogUtil.log('INFO', 'min_idf=%s, max_idf=%s' % (str(min_idf), str(max_idf)))
+
+    f = open(file_path, 'w')
+    for line_id in range(len(qid)):
+        vec = idf_filter(docs[line_id], idf, min_idf, max_idf)
+        line = '%s\n' % ','.join(vec)
+        f.write(line)
+        vec_len = len(vec)
+        max_len = max(max_len, vec_len)
+        min_len = min(min_len, vec_len)
+        ave_len += vec_len
+    ave_len /= (1. * len(qid))
+    f.close()
+    LogUtil.log('INFO', 'generate_single_tfidf_dataset (%s) done' % file_path)
+    LogUtil.log('INFO', 'max_len=%d' % max_len)
+    LogUtil.log('INFO', 'min_len=%d' % min_len)
+    LogUtil.log('INFO', 'ave_len=%d' % ave_len)
+
+
+def generate_idf_dataset(config):
+
+    word_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'word_idf.txt'
+    word_idf = load_idf(word_idf_fp)
+    char_idf_fp = config.get('DIRECTORY', 'stat_pt') + 'char_idf.txt'
+    char_idf = load_idf(char_idf_fp)
+
+    question_offline_fp = config.get('DIRECTORY', 'source_pt') + '/question_train_set.txt'
+    qid_offline, tc_offline, tw_offline, dc_offline, dw_offline = load_question_set(question_offline_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_idf.offline.csv'
+    processor_tc_offline = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_offline, tc_offline, char_idf))
+    processor_tc_offline.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_idf.offline.csv'
+    processor_tw_offline = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_offline, tw_offline, word_idf))
+    processor_tw_offline.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_idf.offline.csv'
+    processor_cc_offline = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_offline, dc_offline, char_idf))
+    processor_cc_offline.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_idf.offline.csv'
+    processor_cw_offline = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_offline, dw_offline, word_idf))
+    processor_cw_offline.start()
+
+    question_online_fp = config.get('DIRECTORY', 'source_pt') + '/question_eval_set.txt'
+    qid_online, tc_online, tw_online, dc_online, dw_online = load_question_set(question_online_fp)
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_char_idf.online.csv'
+    processor_tc_online = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_online, tc_online, char_idf))
+    processor_tc_online.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/title_word_idf.online.csv'
+    processor_tw_online = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_online, tw_online, word_idf))
+    processor_tw_online.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_char_idf.online.csv'
+    processor_cc_online = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_online, dc_online, char_idf))
+    processor_cc_online.start()
+
+    file_path = config.get('DIRECTORY', 'dataset_pt') + '/content_word_idf.online.csv'
+    processor_cw_online = multiprocessing.Process(target=generate_single_idf_dataset, args=(
+        file_path, qid_online, dw_online, word_idf))
+    processor_cw_online.start()
+
+    print("The number of CPU is:" + str(multiprocessing.cpu_count()))
 
 
 def _test_load_question_set(cf):

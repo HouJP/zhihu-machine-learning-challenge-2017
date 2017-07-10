@@ -67,22 +67,26 @@ def train(config):
                             metrics=metrics)
 
     # load title char vectors
-    tc_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char')
+    tc_off_fp = '%s/%s.offline.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'title_char_fn'))
     tc_vecs_off = load_doc_vec(tc_off_fp, char_embedding_index, title_char_length, reverse=True)
     LogUtil.log('INFO', 'load offline title char vector done')
 
     # load title word vectors
-    tw_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word')
+    tw_off_fp = '%s/%s.offline.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'title_word_fn'))
     tw_vecs_off = load_doc_vec(tw_off_fp, word_embedding_index, title_word_length, reverse=False)
     LogUtil.log('INFO', 'load offline title word vector done')
 
     # load content char vectors
-    cc_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char')
+    cc_off_fp = '%s/%s.offline.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'content_char_fn'))
     cc_vecs_off = load_doc_vec(cc_off_fp, char_embedding_index, content_char_length, reverse=True)
     LogUtil.log('INFO', 'load offline content char vector done')
 
     # load content word vectors
-    cw_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word')
+    cw_off_fp = '%s/%s.offline.csv' % (
+        config.get('DIRECTORY', 'dataset_pt'), config.get('TITLE_CONTENT_CNN', 'content_word_fn'))
     cw_vecs_off = load_doc_vec(cw_off_fp, word_embedding_index, content_word_length, reverse=False)
     LogUtil.log('INFO', 'load offline content word vector done')
 
@@ -126,7 +130,7 @@ def train(config):
         model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_vecs],
                   train_lid_vecs,
                   validation_data=(
-                  [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_vecs], valid_lid_vecs),
+                      [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_vecs], valid_lid_vecs),
                   epochs=1,
                   batch_size=batch_size)
         model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id

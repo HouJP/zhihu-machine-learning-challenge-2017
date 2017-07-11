@@ -176,7 +176,7 @@ def load_lid_part(file_path, class_num, inds):
 
 def load_dataset_from_file(tc_fp, tw_fp, cc_fp, cw_fp,
                            tc_len, tw_len, cc_len, cw_len,
-                           char_emb_index, word_emb_index,
+                           char_emb_index, word_emb_index, btm_emb_index,
                            btm_fp, lid_fp, class_num, inds):
     sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, tc_len, True, inds), dtype='int32')
     LogUtil.log('INFO', 'load title char vector done')
@@ -186,7 +186,7 @@ def load_dataset_from_file(tc_fp, tw_fp, cc_fp, cw_fp,
     LogUtil.log('INFO', 'load content char vector done')
     sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, cw_len, False, inds), dtype='int32')
     LogUtil.log('INFO', 'load content word vector done')
-    sub_btm_vecs = np.asarray(load_feature_vec_part(btm_fp, inds), dtype='float32')
+    sub_btm_vecs = np.asarray(load_doc_vec_part(btm_fp, btm_emb_index, 1, False, inds), dtype='int32')
     LogUtil.log('INFO', 'load btm vector done')
     sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds), dtype='int32')
     LogUtil.log('INFO', 'load label id vector done')
@@ -196,7 +196,7 @@ def load_dataset_from_file(tc_fp, tw_fp, cc_fp, cw_fp,
 
 def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
                                 tc_len, tw_len, cc_len, cw_len,
-                                char_emb_index, word_emb_index,
+                                char_emb_index, word_emb_index, btm_emb_index,
                                 btm_fp, lid_fp, class_num, inds, part_size):
     count = 0
     inds_len = len(inds)
@@ -236,7 +236,7 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
             sub_tw_vecs.append(parse_doc_vec(tw_f.readline(), word_emb_index, tw_len, False))
             sub_cc_vecs.append(parse_doc_vec(cc_f.readline(), char_emb_index, cc_len, True))
             sub_cw_vecs.append(parse_doc_vec(cw_f.readline(), word_emb_index, cw_len, False))
-            sub_btm_vecs.append(parse_feature_vec(btm_f.readline()))
+            sub_btm_vecs.append(parse_doc_vec(btm_f.readline(), btm_emb_index, 1, False))
             sub_lid_vecs.append(parse_lid_vec(lid_f.readline(), class_num))
             index_inds += 1
         index_f += 1
@@ -246,7 +246,7 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
             sub_tw_vecs = np.asarray(sub_tw_vecs, dtype='int32')
             sub_cc_vecs = np.asarray(sub_cc_vecs, dtype='int32')
             sub_cw_vecs = np.asarray(sub_cw_vecs, dtype='int32')
-            sub_btm_vecs = np.asarray(sub_btm_vecs, dtype='float32')
+            sub_btm_vecs = np.asarray(sub_btm_vecs, dtype='int32')
             sub_lid_vecs = np.asarray(sub_lid_vecs, dtype='int32')
             yield sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_btm_vecs, sub_lid_vecs
 

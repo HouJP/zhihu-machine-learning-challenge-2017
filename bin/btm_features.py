@@ -46,21 +46,34 @@ def save_question_topic_info(cf):
 
 
 def btm2standard_format(config, argv):
-    tmp_f = open('%s/btm.all.csv' % config.get('DIRECTORY', 'dataset_pt'), 'r')
+    tmp_f = open('%s/btm_embedding.tmp' % config.get('DIRECTORY', 'embedding_pt'), 'r')
+    btm_f = open('%s/btm_embedding.txt' % config.get('DIRECTORY', 'embedding_pt'), 'w')
+
+    line_num = 3219326
+    btm_f.write('%d 100\n' % line_num)
+    ind = 0
+    for line in tmp_f:
+        subs = line.strip().split()
+        subs = [1. / 100 if math.isnan(float(num)) else float(num) for num in subs]
+        subs = ['%s' % num for num in subs]
+        btm_f.write('%d %s\n' % (ind, ' '.join(subs)))
+        ind += 1
+
+    tmp_f.close()
+    btm_f.close()
+
+
+def generate_btm_csv(config, argv):
     btm_off_f = open('%s/btm.offline.csv' % config.get('DIRECTORY', 'dataset_pt'), 'w')
     btm_on_f = open('%s/btm.online.csv' % config.get('DIRECTORY', 'dataset_pt'), 'w')
 
     off_num = 2999967
     on_num = 217360
-    ind = 0
-    for line in tmp_f:
-        if ind < off_num:
-            btm_off_f.write(line)
-        elif ind < off_num + on_num:
-            btm_on_f.write(line)
-        ind += 1
+    for i in range(off_num):
+        btm_off_f.write('%d\n' % i)
+    for i in range(off_num, off_num + on_num):
+        btm_on_f.write('%d\n' % i)
 
-    tmp_f.close()
     btm_off_f.close()
     btm_on_f.close()
 

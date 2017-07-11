@@ -117,6 +117,147 @@ def load_dataset_loop(tc_vecs, tw_vecs, cc_vecs, cw_vecs, btm_vecs, lid_vecs, in
             inds_part = list()
 
 
-if __name__ == '__main__':
-    load_embedding('/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/data/embedding/word_embedding.txt.small')
+def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds):
+    doc_vecs = list()
 
+    inds.sort()
+    index_f = 0
+    index_inds = 0
+    f = open(file_path, 'r')
+    for line in f:
+        if len(inds) <= index_inds:
+            break
+        if index_f == inds[index_inds]:
+            doc_vecs.append(parse_doc_vec(line, emb_index, vec_length, reverse))
+            index_inds += 1
+        index_f += 1
+    f.close()
+
+    return doc_vecs
+
+
+def load_feature_vec_part(file_path, inds):
+    vecs = list()
+
+    inds.sort()
+    index_f = 0
+    index_inds = 0
+    f = open(file_path, 'r')
+    for line in f:
+        if len(inds) <= index_inds:
+            break
+        if index_f == inds[index_inds]:
+            vecs.append(parse_feature_vec(line))
+            index_inds += 1
+        index_f += 1
+    f.close()
+
+    return vecs
+
+
+def load_lid_part(file_path, class_num, inds):
+    vecs = list()
+
+    inds.sort()
+    index_f = 0
+    index_inds = 0
+    f = open(file_path, 'r')
+    for line in f:
+        if len(inds) <= index_inds:
+            break
+        if index_f == inds[index_inds]:
+            vecs.append(parse_lid_vec(line, class_num))
+            index_inds += 1
+        index_f += 1
+    f.close()
+
+    return vecs
+
+
+def load_dataset_from_file(tc_fp, tw_fp, cc_fp, cw_fp,
+                           tc_len, tw_len, cc_len, cw_len,
+                           char_emb_index, word_emb_index,
+                           btm_fp, lid_fp, class_num, inds):
+    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, tc_len, True, inds), dtype='int32')
+    LogUtil.log('INFO', 'load title char vector done')
+    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, tw_len, False, inds), dtype='int32')
+    LogUtil.log('INFO', 'load title word vector done')
+    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, cc_len, True, inds), dtype='int32')
+    LogUtil.log('INFO', 'load content char vector done')
+    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, cw_len, False, inds), dtype='int32')
+    LogUtil.log('INFO', 'load content word vector done')
+    sub_btm_vecs = np.asarray(load_feature_vec_part(btm_fp, inds), dtype='float32')
+    LogUtil.log('INFO', 'load btm vector done')
+    sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds), dtype='int32')
+    LogUtil.log('INFO', 'load label id vector done')
+
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_btm_vecs, sub_lid_vecs
+
+
+def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
+                                tc_len, tw_len, cc_len, cw_len,
+                                char_emb_index, word_emb_index,
+                                btm_fp, lid_fp, class_num, inds, part_size):
+    count = 0
+    inds_len = len(inds)
+
+    sub_tc_vecs = list()
+    sub_tw_vecs = list()
+    sub_cc_vecs = list()
+    sub_cw_vecs = list()
+    sub_btm_vecs = list()
+    sub_lid_vecs = list()
+
+    tc_f = open(tc_fp, 'r')
+    tw_f = open(tw_fp, 'r')
+    cc_f = open(cc_fp, 'r')
+    cw_f = open(cw_fp, 'r')
+    btm_f = open(btm_fp, 'r')
+    lid_f = open(lid_fp, 'r')
+
+    index_f = 0
+    index_inds = 0
+
+    while True:
+        count += 1
+
+        if inds_len <= index_inds:
+            tc_f.seek(0)
+            tw_f.seek(0)
+            cc_f.seek(0)
+            cw_f.seek(0)
+            btm_f.seek(0)
+            lid_f.seek(0)
+            index_f = 0
+            index_inds = 0
+
+        if index_f == inds[index_inds]:
+            sub_tc_vecs.append(parse_doc_vec(tc_f.readline(), char_emb_index, tc_len, True))
+            sub_tw_vecs.append(parse_doc_vec(tw_f.readline(), word_emb_index, tw_len, False))
+            sub_cc_vecs.append(parse_doc_vec(cc_f.readline(), char_emb_index, cc_len, True))
+            sub_cw_vecs.append(parse_doc_vec(cw_f.readline(), word_emb_index, cw_len, False))
+            sub_btm_vecs.append(parse_feature_vec(btm_f.readline()))
+            sub_lid_vecs.append(parse_lid_vec(lid_f.readline(), class_num))
+            index_inds += 1
+        index_f += 1
+
+        if part_size == len(sub_lid_vecs):
+            sub_tc_vecs = np.asarray(sub_tc_vecs, dtype='int32')
+            sub_tw_vecs = np.asarray(sub_tw_vecs, dtype='int32')
+            sub_cc_vecs = np.asarray(sub_cc_vecs, dtype='int32')
+            sub_cw_vecs = np.asarray(sub_cw_vecs, dtype='int32')
+            sub_btm_vecs = np.asarray(sub_btm_vecs, dtype='float32')
+            sub_lid_vecs = np.asarray(sub_lid_vecs, dtype='int32')
+            yield sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_btm_vecs, sub_lid_vecs
+
+            sub_tc_vecs = list()
+            sub_tw_vecs = list()
+            sub_cc_vecs = list()
+            sub_cw_vecs = list()
+            sub_btm_vecs = list()
+            sub_lid_vecs = list()
+
+
+if __name__ == '__main__':
+    load_embedding(
+        '/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/data/embedding/word_embedding.txt.small')

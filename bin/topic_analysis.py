@@ -5,9 +5,11 @@
 # @Email   : houjp1992@gmail.com
 
 
-from text_cnn.data_helpers import load_lid
+from text_cnn.data_helpers import parse_lid_vec
 import sys
 import ConfigParser
+from pylab import *
+import numpy as np
 
 
 def count_topic(topic_mat):
@@ -20,18 +22,25 @@ def count_topic(topic_mat):
 
 def plot_lid_num(config):
     lid_fp = '%s/label_id.offline.csv' % config.get('DIRECTORY', 'dataset_pt')
-    lid = load_lid(lid_fp, 1999)
+    lid_f = open(lid_fp, 'r')
 
     num = []
     tol = 0
-    spe_lid = 99
-    for i in range(len(lid)):
-        if 0 == i % 10000:
+    spe_lid = 106
+    ind = 0
+    for line in lid_f:
+        vec = parse_lid_vec(line, 1999)
+        if 0 == ind % 10000:
             num.append(tol)
-        if 1 == lid[i][spe_lid]:
+            tol = 0
+        if 1 == vec[spe_lid]:
             tol += 1
+        ind += 1
 
     print num
+    plot(range(len(num))[:100], num[:100])
+    show()
+    lid_f.close()
 
 
 def main():

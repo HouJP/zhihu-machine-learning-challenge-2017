@@ -111,7 +111,8 @@ def train(config):
     for train_tc_vecs, train_tw_vecs, train_cc_vecs, train_cw_vecs, train_btm_vecs, train_lid_vecs in \
             load_dataset_from_file_loop(tc_off_fp, tw_off_fp, cc_off_fp, cw_off_fp, title_char_length,
                                         title_word_length, content_char_length, content_word_length,
-                                        char_embedding_index, word_embedding_index, btm_off_fp, lid_off_fp, class_num,
+                                        char_embedding_index, word_embedding_index, btm_embedding_index,
+                                        btm_off_fp, lid_off_fp, class_num,
                                         train_index_off, part_size):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_vecs],

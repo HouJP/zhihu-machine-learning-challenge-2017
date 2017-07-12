@@ -8,12 +8,14 @@
 from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D
 from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
+from keras.optimizers import Adam
 
 from bin.utils import LogUtil
 from loss import binary_crossentropy_sum
 
 
 class TitleContentCNN(object):
+
     def __init__(self,
                  title_word_length,
                  content_word_length,
@@ -24,6 +26,7 @@ class TitleContentCNN(object):
                  word_embedding_matrix,
                  char_embedding_matrix,
                  optimizer,
+                 lr,
                  metrics):
         # set attributes
         self.title_word_length = title_word_length
@@ -64,13 +67,13 @@ class TitleContentCNN(object):
         for win_size in range(2, 6):
             # batch_size x doc_len x embed_size
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='selu', padding='same')(title_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='selu', padding='same')(cont_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='selu', padding='same')(title_char_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='selu', padding='same')(cont_char_emb)))
 
         # Append BTM vector
         title_content_features.append(btm_vector_input)
@@ -78,11 +81,14 @@ class TitleContentCNN(object):
         title_content_features = concatenate(title_content_features)
 
         # Full connection
-        title_content_features = Dense(1024, activation='relu')(title_content_features)
+        title_content_features = Dense(1024, activation='selu')(title_content_features)
 
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_content_features)
 
+        optimizer = None
+        if 'adam' == optimizer:
+            optimizer = Adam(lr=lr)
         self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input, btm_vector_input], preds)
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
         self._model.summary()

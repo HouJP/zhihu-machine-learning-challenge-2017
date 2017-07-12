@@ -54,6 +54,7 @@ def train(config):
     btm_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_vector_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer = config.get('TITLE_CONTENT_CNN', 'optimizer')
+    lr = config.get('TITLE_CONTENT_CNN', 'lr')
     metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
     model = TitleContentCNN(title_word_length=title_word_length,
                             content_word_length=content_word_length,
@@ -64,6 +65,7 @@ def train(config):
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
                             optimizer=optimizer,
+                            lr=lr,
                             metrics=metrics)
 
     # load title char vectors

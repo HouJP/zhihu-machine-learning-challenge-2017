@@ -9,17 +9,16 @@ from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D
 from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
 from keras.optimizers import Adam
-
-import tensorflow as tf
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config = config)
-
 from keras import backend as K
-K.set_session(sess)
-
+import tensorflow as tf
 from bin.utils import LogUtil
 from loss import binary_crossentropy_sum
+
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
+
+K.set_session(sess)
 
 
 class TitleContentCNN(object):

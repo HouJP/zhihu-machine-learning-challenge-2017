@@ -64,7 +64,7 @@ def train(config):
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
-                            optimizer=optimizer,
+                            optimizer_name=optimizer,
                             lr=lr,
                             metrics=metrics)
 

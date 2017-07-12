@@ -198,6 +198,8 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
                                 tc_len, tw_len, cc_len, cw_len,
                                 char_emb_index, word_emb_index, btm_emb_index,
                                 btm_fp, lid_fp, class_num, inds, part_size):
+    inds.sort()
+
     inds_len = len(inds)
 
     sub_tc_vecs = list()

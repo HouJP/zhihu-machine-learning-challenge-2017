@@ -10,6 +10,14 @@ from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
 from keras.optimizers import Adam
 
+import tensorflow as tf
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config = config)
+
+from keras import backend as K
+K.set_session(sess)
+
 from bin.utils import LogUtil
 from loss import binary_crossentropy_sum
 

@@ -32,7 +32,7 @@ class TitleContentCNN(object):
                  class_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
-                 optimizer,
+                 optimizer_name,
                  lr,
                  metrics):
         # set attributes
@@ -43,7 +43,8 @@ class TitleContentCNN(object):
         self.class_num = class_num
         self.word_embedding_matrix = word_embedding_matrix
         self.char_embedding_matrix = char_embedding_matrix
-        self.optimizer = optimizer
+        self.optimizer_name = optimizer_name
+        self.lr = lr
         self.metrics = metrics
         # Placeholder for input (title and content)
         title_word_input = Input(shape=(title_word_length,), dtype='int32', name="title_word_input")
@@ -94,7 +95,7 @@ class TitleContentCNN(object):
         preds = Dense(class_num, activation='sigmoid')(title_content_features)
 
         optimizer = None
-        if 'adam' == optimizer:
+        if 'adam' == optimizer_name:
             optimizer = Adam(lr=lr)
         self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input, btm_vector_input], preds)
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)

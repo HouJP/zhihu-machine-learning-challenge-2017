@@ -215,6 +215,13 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
     btm_f = open(btm_fp, 'r')
     lid_f = open(lid_fp, 'r')
 
+    tc_line = None
+    tw_line = None
+    cc_line = None
+    cw_line = None
+    btm_line = None
+    lid_line = None
+
     index_f = 0
     index_inds = 0
 
@@ -230,14 +237,21 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
             lid_f.seek(0)
             index_f = 0
             index_inds = 0
+        else:
+            tc_line = tc_f.readline()
+            tw_line = tw_f.readline()
+            cc_line = cc_f.readline()
+            cw_line = cw_f.readline()
+            btm_line = btm_f.readline()
+            lid_line = lid_f.readline()
 
         if index_f == inds[index_inds]:
-            sub_tc_vecs.append(parse_doc_vec(tc_f.readline(), char_emb_index, tc_len, True))
-            sub_tw_vecs.append(parse_doc_vec(tw_f.readline(), word_emb_index, tw_len, False))
-            sub_cc_vecs.append(parse_doc_vec(cc_f.readline(), char_emb_index, cc_len, True))
-            sub_cw_vecs.append(parse_doc_vec(cw_f.readline(), word_emb_index, cw_len, False))
-            sub_btm_vecs.append(parse_doc_vec(btm_f.readline(), btm_emb_index, 1, False))
-            sub_lid_vecs.append(parse_lid_vec(lid_f.readline(), class_num))
+            sub_tc_vecs.append(parse_doc_vec(tc_line, char_emb_index, tc_len, True))
+            sub_tw_vecs.append(parse_doc_vec(tw_line, word_emb_index, tw_len, False))
+            sub_cc_vecs.append(parse_doc_vec(cc_line, char_emb_index, cc_len, True))
+            sub_cw_vecs.append(parse_doc_vec(cw_line, word_emb_index, cw_len, False))
+            sub_btm_vecs.append(parse_doc_vec(btm_line, btm_emb_index, 1, False))
+            sub_lid_vecs.append(parse_lid_vec(lid_line, class_num))
             index_inds += 1
         index_f += 1
 

@@ -198,7 +198,6 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
                                 tc_len, tw_len, cc_len, cw_len,
                                 char_emb_index, word_emb_index, btm_emb_index,
                                 btm_fp, lid_fp, class_num, inds, part_size):
-    count = 0
     inds_len = len(inds)
 
     sub_tc_vecs = list()
@@ -215,18 +214,10 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
     btm_f = open(btm_fp, 'r')
     lid_f = open(lid_fp, 'r')
 
-    tc_line = None
-    tw_line = None
-    cc_line = None
-    cw_line = None
-    btm_line = None
-    lid_line = None
-
     index_f = 0
     index_inds = 0
 
     while True:
-        count += 1
 
         if inds_len <= index_inds:
             tc_f.seek(0)
@@ -237,13 +228,13 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
             lid_f.seek(0)
             index_f = 0
             index_inds = 0
-        else:
-            tc_line = tc_f.readline()
-            tw_line = tw_f.readline()
-            cc_line = cc_f.readline()
-            cw_line = cw_f.readline()
-            btm_line = btm_f.readline()
-            lid_line = lid_f.readline()
+
+        tc_line = tc_f.readline()
+        tw_line = tw_f.readline()
+        cc_line = cc_f.readline()
+        cw_line = cw_f.readline()
+        btm_line = btm_f.readline()
+        lid_line = lid_f.readline()
 
         if index_f == inds[index_inds]:
             sub_tc_vecs.append(parse_doc_vec(tc_line, char_emb_index, tc_len, True))

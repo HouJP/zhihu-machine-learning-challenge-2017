@@ -87,7 +87,7 @@ def predict(config, part_id):
                                                                              content_char_length, content_word_length,
                                                                              char_embedding_index, word_embedding_index,
                                                                              btm_embedding_index,
-                                                                             btm_on_fp, _, class_num,
+                                                                             btm_on_fp, None, class_num,
                                                                              all_index_on)
 
     # load hash table of label

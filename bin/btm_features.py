@@ -45,6 +45,30 @@ def save_question_topic_info(cf):
     f.close()
 
 
+def save_question_title_char(config, argv):
+    q_train_set = config.get('DEFAULT', 'source_pt') + '/question_train_set.txt'
+    (qid_train_list, tc_train_list, tw_train_list, dc_train_list, dw_train_list) = data_utils.load_question_set(q_train_set)
+
+    q_eval_set = config.get('DEFAULT', 'source_pt') + '/question_eval_set.txt'
+    (qid_eval_list, tc_eval_list, tw_eval_list, dc_eval_list, dw_eval_list) = data_utils.load_question_set(q_eval_set)
+
+    question_tc_fp = config.get('DEFAULT', 'devel_pt') + '/question_tc.txt'
+    f = open(question_tc_fp, 'w')
+    for i in range(len(qid_train_list)):
+        s = ' '.join(tc_train_list[i]) + '\n'
+        if 0 == s.strip():
+            logging.warn('question_train_set.txt has no title char at line#%d' % i)
+            s = 'empty\n'
+        f.write(s)
+    for i in range(len(qid_eval_list)):
+        s = ' '.join(tc_eval_list[i]) + '\n'
+        if 0 == s.strip():
+            logging.warn('question_eval_set.txt has no title char at line#%d' % i)
+            s = 'empty\n'
+        f.write(s)
+    f.close()
+
+
 def btm2standard_format(config, argv):
     tmp_f = open('%s/btm_embedding.tmp' % config.get('DIRECTORY', 'embedding_pt'), 'r')
     btm_f = open('%s/btm_embedding.txt' % config.get('DIRECTORY', 'embedding_pt'), 'w')

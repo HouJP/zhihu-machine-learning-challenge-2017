@@ -9,6 +9,8 @@ import ConfigParser
 import os
 import sys
 import time
+import tensorflow as tf
+from keras import backend as K
 
 from ..utils import DataUtil
 from data_helpers import *
@@ -37,6 +39,13 @@ def init_out_dir(config):
 
 
 def train(config):
+    # set number of cores
+    num_cores = config.getint('DIRECTORY', 'num_cores')
+    tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
+                               allow_soft_placement=True, device_count={'CPU': num_cores})
+    session = tf.Session(config=tf_config)
+    K.set_session(session)
+    # init output directory
     init_out_dir(config)
     # load word embedding file
     word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
@@ -101,13 +110,13 @@ def train(config):
 
     # load valid dataset
     valid_tc_vecs, valid_tw_vecs, valid_cc_vecs, valid_cw_vecs, \
-        valid_btm_tw_cw_vecs, valid_btm_tc_vecs, \
-        valid_lid_vecs = load_dataset_from_file(
-            tc_off_fp, tw_off_fp, cc_off_fp, cw_off_fp,
-            title_char_length, title_word_length, content_char_length, content_word_length,
-            char_embedding_index, word_embedding_index,
-            btm_tw_cw_off_fp, btm_tc_off_fp,
-            lid_off_fp, class_num, valid_index_off)
+    valid_btm_tw_cw_vecs, valid_btm_tc_vecs, \
+    valid_lid_vecs = load_dataset_from_file(
+        tc_off_fp, tw_off_fp, cc_off_fp, cw_off_fp,
+        title_char_length, title_word_length, content_char_length, content_word_length,
+        char_embedding_index, word_embedding_index,
+        btm_tw_cw_off_fp, btm_tc_off_fp,
+        lid_off_fp, class_num, valid_index_off)
 
     # load train dataset
     part_id = 0
@@ -121,9 +130,11 @@ def train(config):
                 btm_tw_cw_off_fp, btm_tc_off_fp,
                 lid_off_fp, class_num, train_index_off, part_size):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
-        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw_vecs, train_btm_tc_vecs], train_lid_vecs,
+        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw_vecs, train_btm_tc_vecs],
+                  train_lid_vecs,
                   validation_data=(
-                      [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_tw_cw_vecs, valid_btm_tc_vecs], valid_lid_vecs),
+                      [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_tw_cw_vecs,
+                       valid_btm_tc_vecs], valid_lid_vecs),
                   epochs=1,
                   batch_size=batch_size)
         model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id

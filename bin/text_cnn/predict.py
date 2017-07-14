@@ -29,7 +29,7 @@ def save_prediction(pred_fp, preds, id2label, que_ids_test):
 
 def predict(config, part_id):
     # set number of cores
-    num_cores = config.getint('DIRECTORY', 'num_cores')
+    num_cores = config.getint('ENVIRONMENT', 'num_cores')
     tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
                                allow_soft_placement=True, device_count={'CPU': num_cores})
     session = tf.Session(config=tf_config)

@@ -12,6 +12,52 @@ from keras.models import Model, model_from_json
 from bin.utils import LogUtil
 from loss import binary_crossentropy_sum
 from keras.optimizers import Adam, RMSprop
+import tensorflow as tf
+from keras import backend as K
+from data_helpers import load_embedding
+
+
+def init_text_cnn(config):
+    # set number of cores
+    num_cores = config.getint('ENVIRONMENT', 'num_cores')
+    tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
+                               allow_soft_placement=True, device_count={'CPU': num_cores})
+    session = tf.Session(config=tf_config)
+    K.set_session(session)
+
+    # load word embedding file
+    word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                   config.get('TITLE_CONTENT_CNN', 'word_embedding_fn'))
+    word_embedding_index, word_embedding_matrix = load_embedding(word_embedding_fp)
+    # load char embedding file
+    char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                   config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
+    char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
+    # init model
+    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
+    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
+    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
+    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+    btm_tw_cw_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_tw_cw_vector_length')
+    btm_tc_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_tc_vector_length')
+    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+    optimizer_name = config.get('TITLE_CONTENT_CNN', 'optimizer_name')
+    lr = float(config.get('TITLE_CONTENT_CNN', 'lr'))
+    metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
+    model = TitleContentCNN(title_word_length=title_word_length,
+                            content_word_length=content_word_length,
+                            title_char_length=title_char_length,
+                            content_char_length=content_char_length,
+                            btm_tw_cw_vector_length=btm_tw_cw_vector_length,
+                            btm_tc_vector_length=btm_tc_vector_length,
+                            class_num=class_num,
+                            word_embedding_matrix=word_embedding_matrix,
+                            char_embedding_matrix=char_embedding_matrix,
+                            optimizer_name=optimizer_name,
+                            lr=lr,
+                            metrics=metrics)
+
+    return model, word_embedding_index, char_embedding_index
 
 
 class TitleContentCNN(object):

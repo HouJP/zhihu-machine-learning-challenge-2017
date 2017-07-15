@@ -8,12 +8,10 @@
 import ConfigParser
 import json
 import sys
-import tensorflow as tf
-from keras import backend as K
 
 from ..utils import LogUtil, DataUtil
 from data_helpers import *
-from text_cnn import TitleContentCNN
+import text_cnn
 
 
 def save_prediction(pred_fp, preds, id2label, que_ids_test):
@@ -28,71 +26,25 @@ def save_prediction(pred_fp, preds, id2label, que_ids_test):
 
 
 def predict(config, part_id):
-    # set number of cores
-    num_cores = config.getint('ENVIRONMENT', 'num_cores')
-    tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
-                               allow_soft_placement=True, device_count={'CPU': num_cores})
-    session = tf.Session(config=tf_config)
-    K.set_session(session)
-    # load word embedding file
-    word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
-                                   config.get('TITLE_CONTENT_CNN', 'word_embedding_fn'))
-    word_embedding_index, word_embedding_matrix = load_embedding(word_embedding_fp)
-    # load char embedding file
-    char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
-                                   config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
-    char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
-    # init model
-    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
-    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
-    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
-    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
-    btm_tw_cw_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_tw_cw_vector_length')
-    btm_tc_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_tc_vector_length')
-    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
-    optimizer_name = config.get('TITLE_CONTENT_CNN', 'optimizer_name')
-    lr = float(config.get('TITLE_CONTENT_CNN', 'lr'))
-    metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
-    model = TitleContentCNN(title_word_length=title_word_length,
-                            content_word_length=content_word_length,
-                            title_char_length=title_char_length,
-                            content_char_length=content_char_length,
-                            btm_tw_cw_vector_length=btm_tw_cw_vector_length,
-                            btm_tc_vector_length=btm_tc_vector_length,
-                            class_num=class_num,
-                            word_embedding_matrix=word_embedding_matrix,
-                            char_embedding_matrix=char_embedding_matrix,
-                            optimizer_name=optimizer_name,
-                            lr=lr,
-                            metrics=metrics)
-    # load title char vectors
-    tc_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char')
-
-    # load title word vectors
-    tw_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word')
-
-    # load content char vectors
-    cc_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char')
-
-    # load content word vectors
-    cw_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word')
-
-    # load btm vectors
-    btm_tw_cw_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tw_cw')
-    btm_tc_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc')
+    # init text cnn model
+    model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
 
     # load question ID
     qid_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'question_id')
     qid_on = DataUtil.load_vector(qid_on_fp, 'str')
     LogUtil.log('INFO', 'load online question ID done')
-
-    tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on, btm_tw_cw_vecs_on, btm_tc_vecs_on, _ = \
-        load_dataset_from_file(
-            tc_on_fp, tw_on_fp, cc_on_fp, cw_on_fp,
-            title_char_length, title_word_length, content_char_length, content_word_length,
-            char_embedding_index, word_embedding_index,
-            btm_tw_cw_on_fp, btm_tc_on_fp,
-            None, class_num, range(len(qid_on)))
+    # load dataset
+    tc_vecs_on, \
+        tw_vecs_on, \
+        cc_vecs_on, \
+        cw_vecs_on, \
+        btm_tw_cw_vecs_on, \
+        btm_tc_vecs_on, \
+        _ = load_dataset_from_file(config,
+                                   'online',
+                                   word_embedding_index,
+                                   char_embedding_index,
+                                   range(len(qid_on)))
 
     # load hash table of label
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
@@ -102,7 +54,8 @@ def predict(config, part_id):
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
     model.load(model_fp)
-    preds = model.predict([tw_vecs_on, cw_vecs_on, tc_vecs_on, cc_vecs_on, btm_tw_cw_vecs_on, btm_tc_vecs_on], batch_size=batch_size,
+    preds = model.predict([tw_vecs_on, cw_vecs_on, tc_vecs_on, cc_vecs_on, btm_tw_cw_vecs_on, btm_tc_vecs_on],
+                          batch_size=batch_size,
                           verbose=True)
     LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(preds.shape))
     # save prediction

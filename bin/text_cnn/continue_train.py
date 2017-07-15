@@ -1,6 +1,6 @@
 #! /usr/bin/python
 # -*- coding: utf-8 -*-
-# @Time    : 2017/6/30 16:41
+# @Time    : 2017/7/15 21:06
 # @Author  : HouJP
 # @Email   : houjp1992@gmail.com
 
@@ -15,33 +15,14 @@ from data_helpers import *
 import text_cnn
 
 
-def init_out_dir(config):
-    # generate output tag
-    out_tag = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
-    config.set('DIRECTORY', 'out_tag', str(out_tag))
-    # generate output directory
-    out_pt = config.get('DIRECTORY', 'out_pt')
-    out_pt_exists = os.path.exists(out_pt)
-    if out_pt_exists:
-        LogUtil.log("ERROR", 'out path (%s) already exists ' % out_pt)
-        raise Exception
-    else:
-        os.mkdir(out_pt)
-        os.mkdir(config.get('DIRECTORY', 'pred_pt'))
-        os.mkdir(config.get('DIRECTORY', 'model_pt'))
-        os.mkdir(config.get('DIRECTORY', 'conf_pt'))
-        os.mkdir(config.get('DIRECTORY', 'score_pt'))
-        LogUtil.log('INFO', 'out path (%s) created ' % out_pt)
-    # save config
-    config.write(open(config.get('DIRECTORY', 'conf_pt') + 'featwheel.conf', 'w'))
-
-
-def train(config):
+def train(config, part_id):
     # init text cnn model
     model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
 
-    # init output directory
-    init_out_dir(config)
+    # load model
+    model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
+    model.load(model_fp)
+    part_id += 1
 
     # load offline train dataset index
     train_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
@@ -67,7 +48,6 @@ def train(config):
                                                 valid_index_off)
 
     # load train dataset
-    part_id = 0
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     for train_tc_vecs, \
         train_tw_vecs, \
@@ -79,7 +59,8 @@ def train(config):
                                                       'offline',
                                                       word_embedding_index,
                                                       char_embedding_index,
-                                                      train_index_off):
+                                                      train_index_off,
+                                                      part_id):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw_vecs, train_btm_tc_vecs],
                   train_lid_vecs,
@@ -95,7 +76,8 @@ def train(config):
 
 if __name__ == '__main__':
     config_fp = sys.argv[1]
+    part_id = int(sys.argv[2])
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
 
-    train(config)
+    predict(config, part_id)

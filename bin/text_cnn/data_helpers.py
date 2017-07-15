@@ -174,18 +174,35 @@ def load_lid_part(file_path, class_num, inds):
     return vecs
 
 
-def load_dataset_from_file(tc_fp, tw_fp, cc_fp, cw_fp,
-                           tc_len, tw_len, cc_len, cw_len,
-                           char_emb_index, word_emb_index,
-                           btm_tw_cw_fp, btm_tc_fp,
-                           lid_fp, class_num, inds):
-    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, tc_len, True, inds), dtype='int32')
+def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, inds):
+    # load title char vectors
+    tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char', data_name)
+    # load title word vectors
+    tw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word', data_name)
+    # load content char vectors
+    cc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char', data_name)
+    # load content word vectors
+    cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
+    # load btm vectors
+    btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tw_cw', data_name)
+    btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
+    # load label id vectors
+    lid_fp = None if 'online' == data_name \
+        else '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
+
+    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
+    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
+    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
+    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+
+    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, title_char_length, True, inds), dtype='int32')
     LogUtil.log('INFO', 'load title char vector done')
-    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, tw_len, False, inds), dtype='int32')
+    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, title_word_length, False, inds), dtype='int32')
     LogUtil.log('INFO', 'load title word vector done')
-    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, cc_len, True, inds), dtype='int32')
+    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, content_char_length, True, inds), dtype='int32')
     LogUtil.log('INFO', 'load content char vector done')
-    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, cw_len, False, inds), dtype='int32')
+    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds), dtype='int32')
     LogUtil.log('INFO', 'load content word vector done')
     btm_tw_cw_vecs = np.asarray(load_feature_vec_part(btm_tw_cw_fp, inds), dtype='float32')
     LogUtil.log('INFO', 'load btm title word + content word vector done')
@@ -197,11 +214,28 @@ def load_dataset_from_file(tc_fp, tw_fp, cc_fp, cw_fp,
     return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, btm_tw_cw_vecs, btm_tc_vecs, sub_lid_vecs
 
 
-def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
-                                tc_len, tw_len, cc_len, cw_len,
-                                char_emb_index, word_emb_index,
-                                btm_tw_cw_fp, btm_tc_fp,
-                                lid_fp, class_num, inds, part_size):
+def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds, part_id):
+    # load title char vectors
+    tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char', data_name)
+    # load title word vectors
+    tw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word', data_name)
+    # load content char vectors
+    cc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char', data_name)
+    # load content word vectors
+    cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
+    # load btm vectors
+    btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tw_cw', data_name)
+    btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
+    # load label id vectors
+    lid_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
+
+    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
+    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
+    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
+    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+    part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
+
     inds.sort()
 
     inds_len = len(inds)
@@ -224,7 +258,7 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
     lid_f = open(lid_fp, 'r')
 
     index_f = 0
-    index_inds = 0
+    index_inds = (part_id * part_size) % inds_len
 
     while True:
 
@@ -248,10 +282,10 @@ def load_dataset_from_file_loop(tc_fp, tw_fp, cc_fp, cw_fp,
         lid_line = lid_f.readline()
 
         if index_f == inds[index_inds]:
-            sub_tc_vecs.append(parse_doc_vec(tc_line, char_emb_index, tc_len, True))
-            sub_tw_vecs.append(parse_doc_vec(tw_line, word_emb_index, tw_len, False))
-            sub_cc_vecs.append(parse_doc_vec(cc_line, char_emb_index, cc_len, True))
-            sub_cw_vecs.append(parse_doc_vec(cw_line, word_emb_index, cw_len, False))
+            sub_tc_vecs.append(parse_doc_vec(tc_line, char_emb_index, title_char_length, True))
+            sub_tw_vecs.append(parse_doc_vec(tw_line, word_emb_index, title_word_length, False))
+            sub_cc_vecs.append(parse_doc_vec(cc_line, char_emb_index, content_char_length, True))
+            sub_cw_vecs.append(parse_doc_vec(cw_line, word_emb_index, content_word_length, False))
 
             sub_btm_tw_cw_vecs.append(parse_feature_vec(btm_tw_cw_line))
             sub_btm_tc_vecs.append(parse_feature_vec(btm_tc_line))

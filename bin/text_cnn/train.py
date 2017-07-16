@@ -79,7 +79,8 @@ def train(config):
                                                       'offline',
                                                       word_embedding_index,
                                                       char_embedding_index,
-                                                      train_index_off):
+                                                      train_index_off,
+                                                      part_id):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw_vecs, train_btm_tc_vecs],
                   train_lid_vecs,

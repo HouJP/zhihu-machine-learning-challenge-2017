@@ -132,7 +132,7 @@ class TitleContentCNN(object):
         title_content_features = concatenate(title_content_features)
 
         # Full connection
-        title_content_features = Dense(1280, activation='relu')(title_content_features)
+        title_content_features = Dense(512, activation='relu')(title_content_features)
 
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_content_features)

@@ -8,6 +8,7 @@
 from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D
 from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
+from keras.optimizers import Adam, RMSprop
 
 from bin.utils import LogUtil
 from loss import binary_crossentropy_sum
@@ -20,20 +21,25 @@ class TitleContentCNN(object):
                  title_char_length,
                  content_char_length,
                  btm_vector_length,
+                 word_share_length,
                  class_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
-                 optimizer,
+                 optimizer_name,
+                 lr,
                  metrics):
         # set attributes
         self.title_word_length = title_word_length
         self.content_word_length = content_word_length
         self.title_char_length = title_char_length
         self.content_char_length = content_char_length
+        self.btm_vector_length = btm_vector_length
+        self.word_share_length = word_share_length
         self.class_num = class_num
         self.word_embedding_matrix = word_embedding_matrix
         self.char_embedding_matrix = char_embedding_matrix
-        self.optimizer = optimizer
+        self.optimizer_name = optimizer_name
+        self.lr = lr
         self.metrics = metrics
         # Placeholder for input (title and content)
         title_word_input = Input(shape=(title_word_length,), dtype='int32', name="title_word_input")
@@ -43,6 +49,8 @@ class TitleContentCNN(object):
         cont_char_input = Input(shape=(content_char_length,), dtype='int32', name="content_char_input")
 
         btm_vector_input = Input(shape=(btm_vector_length,), dtype='float32', name="btm_vector_input")
+
+        word_share_input = Input(shape=(word_share_length,), dtype='float32', name="word_share_input")
 
         # Embedding layer
         word_embedding_layer = Embedding(len(word_embedding_matrix),
@@ -75,6 +83,10 @@ class TitleContentCNN(object):
         # Append BTM vector
         title_content_features.append(btm_vector_input)
 
+        # Append word share vector
+        word_share_emb = Dense(128, activation='relu')(word_share_input)
+        title_content_features.append(word_share_emb)
+
         title_content_features = concatenate(title_content_features)
 
         # Full connection
@@ -83,7 +95,18 @@ class TitleContentCNN(object):
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_content_features)
 
-        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input, btm_vector_input], preds)
+        self._model = Model([title_word_input,
+                             cont_word_input,
+                             title_char_input,
+                             cont_char_input,
+                             btm_vector_input,
+                             word_share_input],
+                            preds)
+        optimizer = None
+        if 'adam' == optimizer_name:
+            optimizer = Adam(lr=lr)
+        elif 'rmsprop' == optimizer_name:
+            optimizer = RMSprop(lr=lr)
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
         self._model.summary()
 
@@ -103,8 +126,8 @@ class TitleContentCNN(object):
         # load weights into new model
         self._model.load_weights('%s.h5' % model_fp)
         # compile model
-        self._model.compile(loss=binary_crossentropy_sum, optimizer=self.optimizer, metrics=self.metrics)
-        self._model.summary()
+        # self._model.compile(loss=binary_crossentropy_sum, optimizer=self.optimizer, metrics=self.metrics)
+        # self._model.summary()
         LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)
 
     def fit(self, x, y, batch_size=32, epochs=1, validation_data=None):

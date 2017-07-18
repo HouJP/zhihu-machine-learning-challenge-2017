@@ -10,7 +10,7 @@ import sys
 from data_utils import load_topic_info
 
 
-def generate_word_share_features(config):
+def generate_word_share_features(config, argv):
     topic_info_fp = config.get('DIRECTORY', 'source_pt') + '/topic_info.txt'
     tid_list, father_list, tc_list, tw_list, dc_list, dw_list = load_topic_info(topic_info_fp)
 

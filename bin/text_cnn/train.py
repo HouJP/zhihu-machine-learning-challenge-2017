@@ -52,7 +52,6 @@ def train(config):
     title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
     btm_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_vector_length')
-    word_share_length = config.getint('TITLE_CONTENT_CNN', 'word_share_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer_name = config.get('TITLE_CONTENT_CNN', 'optimizer_name')
     lr = float(config.get('TITLE_CONTENT_CNN', 'lr'))
@@ -62,7 +61,6 @@ def train(config):
                             title_char_length=title_char_length,
                             content_char_length=content_char_length,
                             btm_vector_length=btm_vector_length,
-                            word_share_length=word_share_length,
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
@@ -95,11 +93,6 @@ def train(config):
     btm_vecs_off = load_feature_vec(btm_off_fp)
     LogUtil.log('INFO', 'load offline btm vector done')
 
-    # load word share vectors
-    word_share_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'word_share')
-    word_share_vecs_off = load_feature_vec(word_share_off_fp)
-    LogUtil.log('INFO', 'load offline word share vector done')
-
     # load label id vectors
     lid_off_fp = '%s/%s.offline.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id')
     lid_vecs_off = load_lid(lid_off_fp, class_num)
@@ -116,13 +109,12 @@ def train(config):
     valid_index_off = DataUtil.load_vector(valid_index_off_fp, 'int')
 
     # load valid dataset
-    valid_tc_vecs, valid_tw_vecs, valid_cc_vecs, valid_cw_vecs, valid_btm_vecs, valid_word_share_vecs, valid_lid_vecs = load_dataset(
+    valid_tc_vecs, valid_tw_vecs, valid_cc_vecs, valid_cw_vecs, valid_btm_vecs, valid_lid_vecs = load_dataset(
         tc_vecs_off,
         tw_vecs_off,
         cc_vecs_off,
         cw_vecs_off,
         btm_vecs_off,
-        word_share_vecs_off,
         lid_vecs_off,
         valid_index_off)
 
@@ -130,13 +122,13 @@ def train(config):
     part_id = 0
     part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
-    for train_tc_vecs, train_tw_vecs, train_cc_vecs, train_cw_vecs, train_btm_vecs, train_word_share_vecs, train_lid_vecs in load_dataset_loop(
-            tc_vecs_off, tw_vecs_off, cc_vecs_off, cw_vecs_off, btm_vecs_off, word_share_vecs_off, lid_vecs_off, train_index_off, part_size):
+    for train_tc_vecs, train_tw_vecs, train_cc_vecs, train_cw_vecs, train_btm_vecs, train_lid_vecs in load_dataset_loop(
+            tc_vecs_off, tw_vecs_off, cc_vecs_off, cw_vecs_off, btm_vecs_off, lid_vecs_off, train_index_off, part_size):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
-        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_vecs, train_word_share_vecs],
+        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_vecs],
                   train_lid_vecs,
                   validation_data=(
-                  [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_vecs, valid_word_share_vecs],
+                  [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_vecs],
                   valid_lid_vecs),
                   epochs=1,
                   batch_size=batch_size)

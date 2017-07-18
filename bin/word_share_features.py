@@ -18,15 +18,13 @@ def save_word_share_features(config, dataset_name, tw_list):
     else:
         question_offline_fp = None
     qid_all, tc_all, tw_all, dc_all, dw_all = load_question_set(question_offline_fp)
-    features = [[0.] * 1999] * len(qid_all)
+    ws_fs_f = open('%s/word_share.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), dataset_name), 'w')
     for line_id in range(len(tw_all)):
+        feature = [0.] * 1999
         for word in tw_all[line_id]:
             for topic_id in range(1999):
                 if word in tw_list[topic_id]:
-                    features[line_id][topic_id] += 1
-
-    ws_fs_f = open('%s/word_share.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), dataset_name), 'w')
-    for feature in features:
+                    feature[topic_id] += 1
         ws_fs_f.write('%s\n' % ' '.join([str(num) for num in feature]))
     ws_fs_f.close()
 

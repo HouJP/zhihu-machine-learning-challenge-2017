@@ -59,7 +59,7 @@ def train(config):
         valid_cc_vecs, \
         valid_cw_vecs, \
         valid_btm_tw_cw_vecs, \
-        valid_btm_tc_vecs, \
+        valid_word_share_vecs, \
         valid_lid_vecs = load_dataset_from_file(config,
                                                 'offline',
                                                 word_embedding_index,
@@ -68,13 +68,15 @@ def train(config):
 
     # load train dataset
     part_id = 0
+    part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
+    valid_size = config.getint('TITLE_CONTENT_CNN', 'valid_size')
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     for train_tc_vecs, \
         train_tw_vecs, \
         train_cc_vecs, \
         train_cw_vecs, \
         train_btm_tw_cw_vecs,\
-        train_btm_tc_vecs, \
+        train_word_share_vecs, \
         train_lid_vecs in load_dataset_from_file_loop(config,
                                                       'offline',
                                                       word_embedding_index,
@@ -82,13 +84,20 @@ def train(config):
                                                       train_index_off,
                                                       part_id):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
-        model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw_vecs, train_btm_tc_vecs],
-                  train_lid_vecs,
-                  validation_data=(
-                      [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_tw_cw_vecs,
-                       valid_btm_tc_vecs], valid_lid_vecs),
-                  epochs=1,
-                  batch_size=batch_size)
+        if 0 == (((part_id + 1) * part_size) % valid_size):
+            model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw_vecs, train_word_share_vecs],
+                      train_lid_vecs,
+                      validation_data=(
+                          [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_tw_cw_vecs,
+                           valid_word_share_vecs], valid_lid_vecs),
+                      epochs=1,
+                      batch_size=batch_size)
+        else:
+            model.fit(
+                [train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw_vecs, train_word_share_vecs],
+                train_lid_vecs,
+                epochs=1,
+                batch_size=batch_size)
         model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
         model.save(model_fp)
         part_id += 1

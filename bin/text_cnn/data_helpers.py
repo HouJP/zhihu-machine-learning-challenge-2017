@@ -185,7 +185,9 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
     # load btm vectors
     btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tw_cw', data_name)
-    btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
+    # btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
+    # load word share vector
+    word_share_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'word_share', data_name)
     # load label id vectors
     lid_fp = None if 'online' == data_name \
         else '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
@@ -206,12 +208,14 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     LogUtil.log('INFO', 'load content word vector done')
     btm_tw_cw_vecs = np.asarray(load_feature_vec_part(btm_tw_cw_fp, inds), dtype='float32')
     LogUtil.log('INFO', 'load btm title word + content word vector done')
-    btm_tc_vecs = np.asarray(load_feature_vec_part(btm_tc_fp, inds), dtype='float32')
-    LogUtil.log('INFO', 'load btm title char vector done')
+    # btm_tc_vecs = np.asarray(load_feature_vec_part(btm_tc_fp, inds), dtype='float32')
+    # LogUtil.log('INFO', 'load btm title char vector done')
+    word_share_vecs = np.asarray(load_feature_vec_part(word_share_fp, inds), dtype='float32')
+    LogUtil.log('INFO', 'load word share vector done')
     sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds), dtype='int32')
     LogUtil.log('INFO', 'load label id vector done')
 
-    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, btm_tw_cw_vecs, btm_tc_vecs, sub_lid_vecs
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, btm_tw_cw_vecs, word_share_vecs, sub_lid_vecs
 
 
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds, part_id):
@@ -225,7 +229,9 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
     cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
     # load btm vectors
     btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tw_cw', data_name)
-    btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
+    # btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
+    # load word share vectors
+    word_share_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'word_share', data_name)
     # load label id vectors
     lid_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
 
@@ -246,7 +252,8 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
     sub_cw_vecs = list()
 
     sub_btm_tw_cw_vecs = list()
-    sub_btm_tc_vecs = list()
+    # sub_btm_tc_vecs = list()
+    sub_word_share_vecs = list()
     sub_lid_vecs = list()
 
     tc_f = open(tc_fp, 'r')
@@ -254,7 +261,8 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
     cc_f = open(cc_fp, 'r')
     cw_f = open(cw_fp, 'r')
     btm_tw_cw_f = open(btm_tw_cw_fp, 'r')
-    btm_tc_f = open(btm_tc_fp, 'r')
+    # btm_tc_f = open(btm_tc_fp, 'r')
+    word_share_f = open(word_share_fp, 'r')
     lid_f = open(lid_fp, 'r')
 
     index_f = 0
@@ -268,7 +276,8 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
             cc_f.seek(0)
             cw_f.seek(0)
             btm_tw_cw_f.seek(0)
-            btm_tc_f.seek(0)
+            # btm_tc_f.seek(0)
+            word_share_f.seek(0)
             lid_f.seek(0)
             index_f = 0
             index_inds = 0
@@ -278,7 +287,8 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
         cc_line = cc_f.readline()
         cw_line = cw_f.readline()
         btm_tw_cw_line = btm_tw_cw_f.readline()
-        btm_tc_line = btm_tc_f.readline()
+        # btm_tc_line = btm_tc_f.readline()
+        word_share_line = word_share_f.readline()
         lid_line = lid_f.readline()
 
         if index_f == inds[index_inds]:
@@ -288,7 +298,8 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
             sub_cw_vecs.append(parse_doc_vec(cw_line, word_emb_index, content_word_length, False))
 
             sub_btm_tw_cw_vecs.append(parse_feature_vec(btm_tw_cw_line))
-            sub_btm_tc_vecs.append(parse_feature_vec(btm_tc_line))
+            # sub_btm_tc_vecs.append(parse_feature_vec(btm_tc_line))
+            sub_word_share_vecs.append(parse_feature_vec(word_share_line))
 
             sub_lid_vecs.append(parse_lid_vec(lid_line, class_num))
 
@@ -302,17 +313,19 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
             sub_cw_vecs = np.asarray(sub_cw_vecs, dtype='int32')
 
             sub_btm_tw_cw_vecs = np.asarray(sub_btm_tw_cw_vecs, dtype='float32')
-            sub_btm_tc_vecs = np.asarray(sub_btm_tc_vecs, dtype='float32')
+            # sub_btm_tc_vecs = np.asarray(sub_btm_tc_vecs, dtype='float32')
+            sub_word_share_vecs = np.asarray(sub_word_share_vecs, dtype='float32')
 
             sub_lid_vecs = np.asarray(sub_lid_vecs, dtype='int32')
-            yield sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_btm_tw_cw_vecs, sub_btm_tc_vecs, sub_lid_vecs
+            yield sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_btm_tw_cw_vecs, sub_word_share_vecs, sub_lid_vecs
 
             sub_tc_vecs = list()
             sub_tw_vecs = list()
             sub_cc_vecs = list()
             sub_cw_vecs = list()
             sub_btm_tw_cw_vecs = list()
-            sub_btm_tc_vecs = list()
+            # sub_btm_tc_vecs = list()
+            sub_word_share_vecs = list()
             sub_lid_vecs = list()
 
 

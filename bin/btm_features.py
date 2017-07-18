@@ -8,6 +8,8 @@
 import ConfigParser
 import data_utils
 import logging
+import sys
+import math
 
 
 def save_question_topic_info(cf):
@@ -43,14 +45,35 @@ def save_question_topic_info(cf):
     f.close()
 
 
-def main():
-    conf_fp = '/home/houjianpeng/zhihu-machine-learning-challenge-2017/conf/default.conf'
+def btm2standard_format(config, argv):
+    tmp_f = open('%s/btm.all.csv' % config.get('DIRECTORY', 'dataset_pt'), 'r')
+    btm_off_f = open('%s/btm.offline.csv' % config.get('DIRECTORY', 'dataset_pt'), 'w')
+    btm_on_f = open('%s/btm.online.csv' % config.get('DIRECTORY', 'dataset_pt'), 'w')
+
+    off_num = 2999967
+    on_num = 217360
+    ind = 0
+    for line in tmp_f:
+        if ind < off_num:
+            btm_off_f.write(line)
+        elif ind < off_num + on_num:
+            btm_on_f.write(line)
+        ind += 1
+
+    tmp_f.close()
+    btm_off_f.close()
+    btm_on_f.close()
+
+
+def main(argv):
+    conf_fp = argv[1]
     cf = ConfigParser.ConfigParser()
     cf.read(conf_fp)
+    func = argv[2]
 
-    save_question_topic_info(cf)
+    eval(func)(cf, argv[3:])
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv)
 

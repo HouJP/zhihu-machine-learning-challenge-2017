@@ -40,7 +40,7 @@ def init_text_cnn(config):
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
     btm_tw_cw_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_tw_cw_vector_length')
     # btm_tc_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_tc_vector_length')
-    word_share_vector_length = config.getint('TITLE_CONTENT_CNN', 'word_share_vector_length')
+    # word_share_vector_length = config.getint('TITLE_CONTENT_CNN', 'word_share_vector_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer_name = config.get('TITLE_CONTENT_CNN', 'optimizer_name')
     lr = float(config.get('TITLE_CONTENT_CNN', 'lr'))
@@ -51,7 +51,7 @@ def init_text_cnn(config):
                             content_char_length=content_char_length,
                             btm_tw_cw_vector_length=btm_tw_cw_vector_length,
                             # btm_tc_vector_length=btm_tc_vector_length,
-                            word_share_vector_length=word_share_vector_length,
+                            # word_share_vector_length=word_share_vector_length,
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
@@ -70,7 +70,7 @@ class TitleContentCNN(object):
                  content_char_length,
                  btm_tw_cw_vector_length,
                  # btm_tc_vector_length,
-                 word_share_vector_length,
+                 # word_share_vector_length,
                  class_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
@@ -100,7 +100,7 @@ class TitleContentCNN(object):
         btm_tw_cw_vector_input = Input(shape=(btm_tw_cw_vector_length,), dtype='float32', name="btm_tw_cw_vector_input")
         # btm_tc_vector_input = Input(shape=(btm_tc_vector_length,), dtype='float32', name="btm_tc_vector_input")
 
-        word_share_vector_input = Input(shape=(word_share_vector_length,), dtype='float32', name="word_share_vector_input")
+        # word_share_vector_input = Input(shape=(word_share_vector_length,), dtype='float32', name="word_share_vector_input")
 
         # Embedding layer
         word_embedding_layer = Embedding(len(word_embedding_matrix),
@@ -135,8 +135,8 @@ class TitleContentCNN(object):
         # title_content_features.append(btm_tc_vector_input)
 
         # Append word share vector
-        word_share_vector_emb = Dense(128, activation='relu')(word_share_vector_input)
-        title_content_features.append(word_share_vector_emb)
+        # word_share_vector_emb = Dense(128, activation='relu')(word_share_vector_input)
+        # title_content_features.append(word_share_vector_emb)
 
         title_content_features = concatenate(title_content_features)
 
@@ -147,8 +147,7 @@ class TitleContentCNN(object):
         preds = Dense(class_num, activation='sigmoid')(title_content_features)
 
         self._model = Model(
-            [title_word_input, cont_word_input, title_char_input, cont_char_input, btm_tw_cw_vector_input,
-             word_share_vector_input], preds)
+            [title_word_input, cont_word_input, title_char_input, cont_char_input, btm_tw_cw_vector_input], preds)
         optimizer = None
         if 'adam' == optimizer_name:
             optimizer = Adam(lr=lr)

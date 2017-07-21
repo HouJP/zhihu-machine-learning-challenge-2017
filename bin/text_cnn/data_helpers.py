@@ -230,12 +230,12 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
 
     while True:
 
-        if inds_len <= index_inds:
+        if inds_len <= inds_index:
             index_inds = 0
             random.shuffle(inds)
 
         sub_inds.append(inds[inds_index])
-        index_inds += 1
+        inds_index += 1
 
         if part_size == len(sub_inds):
             yield load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, sub_inds)

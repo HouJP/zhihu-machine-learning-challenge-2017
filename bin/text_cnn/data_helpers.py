@@ -7,6 +7,7 @@
 
 import numpy as np
 import math
+import random
 from bin.utils import LogUtil
 
 
@@ -115,6 +116,130 @@ def load_dataset_loop(tc_vecs, tw_vecs, cc_vecs, cw_vecs, btm_vecs, lid_vecs, in
         if 0 == count % part_size:
             yield load_dataset(tc_vecs, tw_vecs, cc_vecs, cw_vecs, btm_vecs, lid_vecs, inds_part)
             inds_part = list()
+
+
+def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds):
+    doc_vecs = list()
+
+    inds.sort()
+    index_f = 0
+    index_inds = 0
+    f = open(file_path, 'r')
+    for line in f:
+        if len(inds) <= index_inds:
+            break
+        if index_f == inds[index_inds]:
+            doc_vecs.append(parse_doc_vec(line, emb_index, vec_length, reverse))
+            index_inds += 1
+        index_f += 1
+    f.close()
+
+    return doc_vecs
+
+
+def load_feature_vec_part(file_path, inds):
+    vecs = list()
+
+    inds.sort()
+    index_f = 0
+    index_inds = 0
+    f = open(file_path, 'r')
+    for line in f:
+        if len(inds) <= index_inds:
+            break
+        if index_f == inds[index_inds]:
+            vecs.append(parse_feature_vec(line))
+            index_inds += 1
+        index_f += 1
+    f.close()
+
+    return vecs
+
+
+def load_lid_part(file_path, class_num, inds):
+    vecs = list()
+
+    inds.sort()
+    index_f = 0
+    index_inds = 0
+    f = open(file_path, 'r')
+    for line in f:
+        if len(inds) <= index_inds:
+            break
+        if index_f == inds[index_inds]:
+            vecs.append(parse_lid_vec(line, class_num))
+            index_inds += 1
+        index_f += 1
+    f.close()
+
+    return vecs
+
+
+def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, inds):
+    # load title char vectors
+    tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char', data_name)
+    # load title word vectors
+    tw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word', data_name)
+    # load content char vectors
+    cc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char', data_name)
+    # load content word vectors
+    cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
+    # load btm vectors
+    fs_btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tw_cw', data_name)
+    # btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
+    # load word share vector
+    # word_share_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'word_share', data_name)
+    # load label id vectors
+    lid_fp = None if 'online' == data_name \
+        else '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
+
+    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
+    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
+    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
+    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+
+    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, title_char_length, True, inds), dtype='int32')
+    LogUtil.log('INFO', 'load title char vector done')
+    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, title_word_length, False, inds), dtype='int32')
+    LogUtil.log('INFO', 'load title word vector done')
+    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, content_char_length, True, inds), dtype='int32')
+    LogUtil.log('INFO', 'load content char vector done')
+    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds), dtype='int32')
+    LogUtil.log('INFO', 'load content word vector done')
+    fs_btm_tw_cw = np.asarray(load_feature_vec_part(fs_btm_tw_cw_fp, inds), dtype='float32')
+    LogUtil.log('INFO', 'load btm title word + content word vector done')
+    # btm_tc_vecs = np.asarray(load_feature_vec_part(btm_tc_fp, inds), dtype='float32')
+    # LogUtil.log('INFO', 'load btm title char vector done')
+    # word_share_vecs = np.asarray(load_feature_vec_part(word_share_fp, inds), dtype='float32')
+    LogUtil.log('INFO', 'load word share vector done')
+    sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds), dtype='int32')
+    LogUtil.log('INFO', 'load label id vector done')
+
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, fs_btm_tw_cw, sub_lid_vecs
+
+
+def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds):
+    part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
+
+    inds.sort()
+    inds_len = len(inds)
+    inds_index = 0
+
+    sub_inds = list()
+
+    while True:
+
+        if inds_len <= index_inds:
+            index_inds = 0
+            random.shuffle(inds)
+
+        sub_inds.append(inds[inds_index])
+        index_inds += 1
+
+        if part_size == len(sub_inds):
+            yield load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, sub_inds)
+            sub_inds = list()
 
 
 if __name__ == '__main__':

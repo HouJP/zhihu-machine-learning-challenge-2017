@@ -231,7 +231,7 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
     while True:
 
         if inds_len <= inds_index:
-            index_inds = 0
+            inds_index = 0
             random.shuffle(inds)
 
         sub_inds.append(inds[inds_index])

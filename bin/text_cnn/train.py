@@ -60,6 +60,7 @@ def train(config):
         valid_cc_vecs, \
         valid_cw_vecs, \
         valid_btm_tw_cw, \
+        valid_word_share, \
         valid_lid_vecs = load_dataset_from_file(config,
                                                 'offline',
                                                 word_embedding_index,
@@ -76,6 +77,7 @@ def train(config):
         train_cc_vecs, \
         train_cw_vecs, \
         train_btm_tw_cw, \
+        train_word_share, \
         train_lid_vecs in load_dataset_from_file_loop(config,
                                                       'offline',
                                                       word_embedding_index,
@@ -83,10 +85,10 @@ def train(config):
                                                       train_index_off):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         if 0 == (((part_id + 1) * part_size) % valid_size):
-            model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw],
+            model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw, train_word_share],
                       train_lid_vecs,
                       validation_data=(
-                          [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_tw_cw],
+                          [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_tw_cw, valid_word_share],
                           valid_lid_vecs),
                       epochs=1,
                       batch_size=batch_size)
@@ -94,7 +96,7 @@ def train(config):
             model.save(model_fp)
         else:
             model.fit(
-                [train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw],
+                [train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw, train_word_share],
                 train_lid_vecs,
                 epochs=1,
                 batch_size=batch_size)

@@ -194,6 +194,8 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
     # load btm_tw_cw features
     fs_btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'fs_btm_tw_cw', data_name)
+    # load word_share features
+    fs_word_share_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'fs_word_share', data_name)
     # load label id vectors
     lid_fp = None if 'online' == data_name \
         else '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
@@ -219,10 +221,13 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     sub_fs_btm_tw_cw = np.asarray(load_feature_vec_part(fs_btm_tw_cw_fp, inds_copy, inds_map), dtype='float32')
     LogUtil.log('INFO', 'load btm_tw_cw features done')
 
+    sub_fs_word_share = np.asarray(load_feature_vec_part(fs_word_share_fp, inds_copy, inds_map), dtype='float32')
+    LogUtil.log('INFO', 'load word share features done')
+
     sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load label id vector done')
 
-    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_fs_btm_tw_cw, sub_lid_vecs
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_fs_btm_tw_cw, sub_fs_word_share, sub_lid_vecs
 
 
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds):

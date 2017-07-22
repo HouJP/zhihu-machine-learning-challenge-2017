@@ -138,21 +138,22 @@ def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds_copy, inds
     return doc_vecs
 
 
-def load_feature_vec_part(file_path, inds):
-    vecs = list()
+def load_feature_vec_part(file_path, inds_copy, inds_map):
+    vecs = [0] * len(inds_copy)
 
-    inds.sort()
     index_f = 0
     index_inds = 0
     f = open(file_path, 'r')
     for line in f:
-        if len(inds) <= index_inds:
+        if len(inds_copy) <= index_inds:
             break
-        if index_f == inds[index_inds]:
-            vecs.append(parse_feature_vec(line))
+        if index_f == inds_copy[index_inds]:
+            vecs[index_inds] = parse_feature_vec(line)
             index_inds += 1
         index_f += 1
     f.close()
+
+    vecs = [vecs[i] for i in inds_map]
 
     return vecs
 
@@ -191,6 +192,8 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     cc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char', data_name)
     # load content word vectors
     cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
+    # load btm_tw_cw features
+    fs_btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'fs_btm_tw_cw', data_name)
     # load label id vectors
     lid_fp = None if 'online' == data_name \
         else '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
@@ -213,10 +216,13 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load content word vector done')
 
+    sub_fs_btm_tw_cw = np.asarray(load_feature_vec_part(fs_btm_tw_cw_fp, inds_copy, inds_map), dtype='float32')
+    LogUtil.log('INFO', 'load btm_tw_cw features done')
+
     sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load label id vector done')
 
-    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_fs_btm_tw_cw, sub_lid_vecs
 
 
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds):

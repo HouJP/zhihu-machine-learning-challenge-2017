@@ -46,6 +46,7 @@ def init_text_cnn(config):
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
     title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
+    fs_btm_tw_cw_length = config.getint('TITLE_CONTENT_CNN', 'fs_btm_tw_cw_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer_name = config.get('TITLE_CONTENT_CNN', 'optimizer_name')
     lr = float(config.get('TITLE_CONTENT_CNN', 'lr'))
@@ -54,6 +55,7 @@ def init_text_cnn(config):
                             content_word_length=content_word_length,
                             title_char_length=title_char_length,
                             content_char_length=content_char_length,
+                            fs_btm_tw_cw_length=fs_btm_tw_cw_length,
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
@@ -70,6 +72,7 @@ class TitleContentCNN(object):
                  content_word_length,
                  title_char_length,
                  content_char_length,
+                 fs_btm_tw_cw_length,
                  class_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
@@ -81,6 +84,7 @@ class TitleContentCNN(object):
         self.content_word_length = content_word_length
         self.title_char_length = title_char_length
         self.content_char_length = content_char_length
+        self.fs_btm_tw_cw_length = fs_btm_tw_cw_length
         self.class_num = class_num
         self.word_embedding_matrix = word_embedding_matrix
         self.char_embedding_matrix = char_embedding_matrix
@@ -122,6 +126,10 @@ class TitleContentCNN(object):
             title_content_features.append(
                 GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(cont_char_emb)))
 
+        # add btm_tw_cw features
+        fs_btm_tw_cw_input = Input(shape=(fs_btm_tw_cw_length,), dtype='float32', name="fs_btm_tw_cw_input")
+        title_content_features.append(fs_btm_tw_cw_input)
+
         title_content_features = concatenate(title_content_features)
 
         # Full connection
@@ -131,7 +139,7 @@ class TitleContentCNN(object):
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_content_features)
 
-        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input], preds)
+        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input, fs_btm_tw_cw_input], preds)
         if 'rmsprop' == optimizer_name:
             optimizer = optimizers.RMSprop(lr=lr)
         elif 'adam' == optimizer_name:

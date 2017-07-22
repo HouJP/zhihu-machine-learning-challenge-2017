@@ -28,9 +28,9 @@ def init_text_cnn(config):
         session = tf.Session(config=tf_config)
         K.set_session(session)
     elif 'gpu' == mode:
-        config = tf.ConfigProto()
+        tf_config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
-        sess = tf.Session(config=config)
+        sess = tf.Session(config=tf_config)
         K.set_session(sess)
 
     # load word embedding file

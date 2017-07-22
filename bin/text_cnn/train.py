@@ -52,16 +52,6 @@ def train(config):
                                                   config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
     valid_index_off = DataUtil.load_vector(valid_index_off_fp, 'int')
 
-    # load offline train dataset index
-    train_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
-                                                  config.get('TITLE_CONTENT_CNN', 'train_index_offline_fn'))
-    train_index_off = DataUtil.load_vector(train_index_off_fp, 'int')
-
-    # load offline valid dataset index
-    valid_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
-                                                  config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
-    valid_index_off = DataUtil.load_vector(valid_index_off_fp, 'int')
-
     # load valid dataset
     valid_tc_vecs, \
         valid_tw_vecs, \

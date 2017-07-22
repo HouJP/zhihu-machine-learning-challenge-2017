@@ -176,6 +176,11 @@ def load_lid_part(file_path, class_num, inds):
 
 
 def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, inds):
+    # make a copy of index
+    inds_sorted = sorted(enumerate(inds), key=lambda kv: kv[1])
+    inds_copy = [kv[1] for kv in inds_sorted]
+    inds_map = [kv2[0] for kv2 in sorted(enumerate([kv3[0] for kv3 in inds_sorted]), key=lambda kv: kv[1])]
+
     # load title char vectors
     tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char', data_name)
     # load title word vectors
@@ -194,16 +199,24 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
 
-    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, title_char_length, True, inds), dtype='int32')
+    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, title_char_length, True, inds_copy), dtype='int32')
+    sub_tc_vecs = [sub_tc_vecs[i] for i in inds_map]
     LogUtil.log('INFO', 'load title char vector done')
-    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, title_word_length, False, inds), dtype='int32')
+
+    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, title_word_length, False, inds_copy), dtype='int32')
+    sub_tw_vecs = [sub_tw_vecs[i] for i in inds_map]
     LogUtil.log('INFO', 'load title word vector done')
-    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, content_char_length, True, inds), dtype='int32')
+
+    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, content_char_length, True, inds_copy), dtype='int32')
+    sub_cc_vecs = [sub_cc_vecs[i] for i in inds_map]
     LogUtil.log('INFO', 'load content char vector done')
-    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds), dtype='int32')
+
+    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds_copy), dtype='int32')
+    sub_cw_vecs = [sub_cw_vecs[i] for i in inds_map]
     LogUtil.log('INFO', 'load content word vector done')
-    LogUtil.log('INFO', 'load word share vector done')
-    sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds), dtype='int32')
+
+    sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy), dtype='int32')
+    sub_lid_vecs = None if sub_lid_vecs else [sub_lid_vecs[i] for i in inds_map]
     LogUtil.log('INFO', 'load label id vector done')
 
     return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs
@@ -212,7 +225,6 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds):
     part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
 
-    inds.sort()
     inds_len = len(inds)
     inds_index = 0
 

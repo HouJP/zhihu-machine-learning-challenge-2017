@@ -216,7 +216,7 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     LogUtil.log('INFO', 'load content word vector done')
 
     sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy), dtype='int32')
-    sub_lid_vecs = None if sub_lid_vecs else [sub_lid_vecs[i] for i in inds_map]
+    sub_lid_vecs = None if sub_lid_vecs is None else [sub_lid_vecs[i] for i in inds_map]
     LogUtil.log('INFO', 'load label id vector done')
 
     return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs

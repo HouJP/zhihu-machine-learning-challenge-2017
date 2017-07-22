@@ -19,11 +19,19 @@ from data_helpers import load_embedding
 
 def init_text_cnn(config):
     # set number of cores
-    num_cores = config.getint('ENVIRONMENT', 'num_cores')
-    tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
-                               allow_soft_placement=True, device_count={'CPU': num_cores})
-    session = tf.Session(config=tf_config)
-    K.set_session(session)
+    mode = config.get('ENVIRONMENT', 'mode')
+    LogUtil.log('INFO', 'mode=%s' % mode)
+    if 'cpu' == mode:
+        num_cores = config.getint('ENVIRONMENT', 'num_cores')
+        tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
+                                   allow_soft_placement=True, device_count={'CPU': num_cores})
+        session = tf.Session(config=tf_config)
+        K.set_session(session)
+    elif 'gpu' == mode:
+        config = tf.ConfigProto()
+        config.gpu_options.allow_growth = True
+        sess = tf.Session(config=config)
+        K.set_session(sess)
 
     # load word embedding file
     word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),

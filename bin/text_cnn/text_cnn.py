@@ -49,9 +49,6 @@ def init_text_cnn(config):
                             content_word_length=content_word_length,
                             title_char_length=title_char_length,
                             content_char_length=content_char_length,
-                            fs_btm_tw_cw_length=fs_btm_tw_cw_length,
-                            # btm_tc_vector_length=btm_tc_vector_length,
-                            # word_share_vector_length=word_share_vector_length,
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
@@ -68,7 +65,6 @@ class TitleContentCNN(object):
                  content_word_length,
                  title_char_length,
                  content_char_length,
-                 fs_btm_tw_cw_length,
                  class_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
@@ -80,7 +76,6 @@ class TitleContentCNN(object):
         self.content_word_length = content_word_length
         self.title_char_length = title_char_length
         self.content_char_length = content_char_length
-        self.fs_btm_tw_cw_length = fs_btm_tw_cw_length
         self.class_num = class_num
         self.word_embedding_matrix = word_embedding_matrix
         self.char_embedding_matrix = char_embedding_matrix
@@ -93,8 +88,6 @@ class TitleContentCNN(object):
 
         title_char_input = Input(shape=(title_char_length,), dtype='int32', name="title_char_input")
         cont_char_input = Input(shape=(content_char_length,), dtype='int32', name="content_char_input")
-
-        fs_btm_tw_cw_input = Input(shape=(fs_btm_tw_cw_length,), dtype='float32', name="fs_btm_tw_cw_input")
 
         # Embedding layer
         word_embedding_layer = Embedding(len(word_embedding_matrix),
@@ -116,30 +109,27 @@ class TitleContentCNN(object):
         for win_size in range(2, 6):
             # batch_size x doc_len x embed_size
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(cont_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(title_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_char_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(128, win_size, activation='relu', padding='same')(cont_char_emb)))
-
-        # Append BTM vector
-        title_content_features.append(fs_btm_tw_cw_input)
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(cont_char_emb)))
 
         title_content_features = concatenate(title_content_features)
 
         # Full connection
-        title_content_features = Dense(1024, activation='relu')(title_content_features)
+        title_content_features = Dense(1800, activation='relu')(title_content_features)
 
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_content_features)
 
-        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input, fs_btm_tw_cw_input], preds)
+        self._model = Model([title_word_input, cont_word_input, title_char_input, cont_char_input], preds)
         if 'rmsprop' == optimizer_name:
             optimizer = optimizers.RMSprop(lr=lr)
         elif 'adam' == optimizer_name:
-            optimizer = optimizers.Adam(lr=lr)
+            optimizer = optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
         else:
             optimizer = None
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
@@ -160,12 +150,9 @@ class TitleContentCNN(object):
         self._model = model_from_json(model_json)
         # load weights into new model
         self._model.load_weights('%s.h5' % model_fp)
-        # compile model
-        # self._model.compile(loss=binary_crossentropy_sum, optimizer=self.optimizer, metrics=self.metrics)
-        # self._model.summary()
         LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)
 
-    def fit(self, x, y, batch_size=32, epochs=1, validation_data=None):
+    def fit(self, x, y, batch_size, epochs=1, validation_data=None):
         self._model.fit(x, y, epochs=epochs, batch_size=batch_size, validation_data=validation_data)
 
     def predict(self, x, batch_size, verbose):

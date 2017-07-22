@@ -184,11 +184,6 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     cc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char', data_name)
     # load content word vectors
     cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word', data_name)
-    # load btm vectors
-    fs_btm_tw_cw_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tw_cw', data_name)
-    # btm_tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm_tc', data_name)
-    # load word share vector
-    # word_share_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'word_share', data_name)
     # load label id vectors
     lid_fp = None if 'online' == data_name \
         else '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
@@ -207,16 +202,11 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     LogUtil.log('INFO', 'load content char vector done')
     sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds), dtype='int32')
     LogUtil.log('INFO', 'load content word vector done')
-    fs_btm_tw_cw = np.asarray(load_feature_vec_part(fs_btm_tw_cw_fp, inds), dtype='float32')
-    LogUtil.log('INFO', 'load btm title word + content word vector done')
-    # btm_tc_vecs = np.asarray(load_feature_vec_part(btm_tc_fp, inds), dtype='float32')
-    # LogUtil.log('INFO', 'load btm title char vector done')
-    # word_share_vecs = np.asarray(load_feature_vec_part(word_share_fp, inds), dtype='float32')
     LogUtil.log('INFO', 'load word share vector done')
     sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds), dtype='int32')
     LogUtil.log('INFO', 'load label id vector done')
 
-    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, fs_btm_tw_cw, sub_lid_vecs
+    return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs
 
 
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds):

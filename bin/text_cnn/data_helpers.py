@@ -118,21 +118,22 @@ def load_dataset_loop(tc_vecs, tw_vecs, cc_vecs, cw_vecs, btm_vecs, lid_vecs, in
             inds_part = list()
 
 
-def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds):
-    doc_vecs = list()
+def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds_copy, inds_map):
+    doc_vecs = [0] * len(inds_copy)
 
-    inds.sort()
     index_f = 0
     index_inds = 0
     f = open(file_path, 'r')
     for line in f:
-        if len(inds) <= index_inds:
+        if len(inds_copy) <= index_inds:
             break
-        if index_f == inds[index_inds]:
-            doc_vecs.append(parse_doc_vec(line, emb_index, vec_length, reverse))
+        if index_f == inds_copy[index_inds]:
+            doc_vecs[index_inds] = parse_doc_vec(line, emb_index, vec_length, reverse)
             index_inds += 1
         index_f += 1
     f.close()
+
+    doc_vecs = [doc_vecs[i] for i in inds_map]
 
     return doc_vecs
 
@@ -156,21 +157,22 @@ def load_feature_vec_part(file_path, inds):
     return vecs
 
 
-def load_lid_part(file_path, class_num, inds):
-    vecs = list()
+def load_lid_part(file_path, class_num, inds_copy, inds_map):
+    vecs = [0] * len(inds_copy)
 
-    inds.sort()
     index_f = 0
     index_inds = 0
     f = open(file_path, 'r')
     for line in f:
-        if len(inds) <= index_inds:
+        if len(inds_copy) <= index_inds:
             break
-        if index_f == inds[index_inds]:
-            vecs.append(parse_lid_vec(line, class_num))
+        if index_f == inds_copy[index_inds]:
+            vecs[index_inds] = parse_lid_vec(line, class_num)
             index_inds += 1
         index_f += 1
     f.close()
+
+    vecs = [vecs[i] for i in inds_map]
 
     return vecs
 
@@ -199,24 +201,19 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
 
-    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, title_char_length, True, inds_copy), dtype='int32')
-    sub_tc_vecs = [sub_tc_vecs[i] for i in inds_map]
+    sub_tc_vecs = np.asarray(load_doc_vec_part(tc_fp, char_emb_index, title_char_length, True, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load title char vector done')
 
-    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, title_word_length, False, inds_copy), dtype='int32')
-    sub_tw_vecs = [sub_tw_vecs[i] for i in inds_map]
+    sub_tw_vecs = np.asarray(load_doc_vec_part(tw_fp, word_emb_index, title_word_length, False, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load title word vector done')
 
-    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, content_char_length, True, inds_copy), dtype='int32')
-    sub_cc_vecs = [sub_cc_vecs[i] for i in inds_map]
+    sub_cc_vecs = np.asarray(load_doc_vec_part(cc_fp, char_emb_index, content_char_length, True, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load content char vector done')
 
-    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds_copy), dtype='int32')
-    sub_cw_vecs = [sub_cw_vecs[i] for i in inds_map]
+    sub_cw_vecs = np.asarray(load_doc_vec_part(cw_fp, word_emb_index, content_word_length, False, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load content word vector done')
 
-    sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy), dtype='int32')
-    sub_lid_vecs = None if sub_lid_vecs is None else [sub_lid_vecs[i] for i in inds_map]
+    sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load label id vector done')
 
     return sub_tc_vecs, sub_tw_vecs, sub_cc_vecs, sub_cw_vecs, sub_lid_vecs

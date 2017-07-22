@@ -29,7 +29,7 @@ def init_text_cnn(config):
         K.set_session(session)
     elif 'gpu' == mode:
         tf_config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
+        tf_config.gpu_options.allow_growth = True
         sess = tf.Session(config=tf_config)
         K.set_session(sess)
 

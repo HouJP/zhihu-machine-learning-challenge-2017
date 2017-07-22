@@ -5,7 +5,7 @@
 # @Email   : houjp1992@gmail.com
 
 
-from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D
+from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D, Dropout
 from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
 from keras import optimizers
@@ -111,7 +111,7 @@ class TitleContentCNN(object):
 
         # Create a convolution + max pooling layer
         title_content_features = list()
-        for win_size in range(2, 6):
+        for win_size in range(2, 7):
             # batch_size x doc_len x embed_size
             title_content_features.append(
                 GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_word_emb)))
@@ -125,7 +125,8 @@ class TitleContentCNN(object):
         title_content_features = concatenate(title_content_features)
 
         # Full connection
-        title_content_features = Dense(1800, activation='relu')(title_content_features)
+        title_content_features = Dense(3600, activation='relu')(title_content_features)
+        title_content_features = Dropout(0.5)(title_content_features)
 
         # Prediction
         preds = Dense(class_num, activation='sigmoid')(title_content_features)

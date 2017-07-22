@@ -270,7 +270,9 @@ def main():
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
 
-    random_split_index_offline(config)
+    func = sys.argv[2]
+
+    eval(func)(config)
 
 
 if __name__ == '__main__':

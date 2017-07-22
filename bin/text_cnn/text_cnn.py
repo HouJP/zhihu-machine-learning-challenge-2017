@@ -19,11 +19,11 @@ from data_helpers import load_embedding
 
 def init_text_cnn(config):
     # set number of cores
-    num_cores = config.getint('ENVIRONMENT', 'num_cores')
-    tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
-                               allow_soft_placement=True, device_count={'CPU': num_cores})
-    session = tf.Session(config=tf_config)
-    K.set_session(session)
+    # num_cores = config.getint('ENVIRONMENT', 'num_cores')
+    # tf_config = tf.ConfigProto(intra_op_parallelism_threads=num_cores, inter_op_parallelism_threads=num_cores,
+    #                            allow_soft_placement=True, device_count={'CPU': num_cores})
+    # session = tf.Session(config=tf_config)
+    # K.set_session(session)
 
     # load word embedding file
     word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
@@ -38,9 +38,6 @@ def init_text_cnn(config):
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
     title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
-    fs_btm_tw_cw_length = config.getint('TITLE_CONTENT_CNN', 'fs_btm_tw_cw_length')
-    # btm_tc_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_tc_vector_length')
-    # word_share_vector_length = config.getint('TITLE_CONTENT_CNN', 'word_share_vector_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer_name = config.get('TITLE_CONTENT_CNN', 'optimizer_name')
     lr = float(config.get('TITLE_CONTENT_CNN', 'lr'))

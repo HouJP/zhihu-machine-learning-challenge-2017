@@ -128,12 +128,10 @@ def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds_copy, inds
         if len(inds_copy) <= index_inds:
             break
         if index_f == inds_copy[index_inds]:
-            doc_vecs[index_inds] = parse_doc_vec(line, emb_index, vec_length, reverse)
+            doc_vecs[inds_map[index_inds]] = parse_doc_vec(line, emb_index, vec_length, reverse)
             index_inds += 1
         index_f += 1
     f.close()
-
-    doc_vecs = [doc_vecs[i] for i in inds_map]
 
     return doc_vecs
 
@@ -148,12 +146,10 @@ def load_feature_vec_part(file_path, inds_copy, inds_map):
         if len(inds_copy) <= index_inds:
             break
         if index_f == inds_copy[index_inds]:
-            vecs[index_inds] = parse_feature_vec(line)
+            vecs[inds_map[index_inds]] = parse_feature_vec(line)
             index_inds += 1
         index_f += 1
     f.close()
-
-    vecs = [vecs[i] for i in inds_map]
 
     return vecs
 
@@ -168,12 +164,10 @@ def load_lid_part(file_path, class_num, inds_copy, inds_map):
         if len(inds_copy) <= index_inds:
             break
         if index_f == inds_copy[index_inds]:
-            vecs[index_inds] = parse_lid_vec(line, class_num)
+            vecs[inds_map[index_inds]] = parse_lid_vec(line, class_num)
             index_inds += 1
         index_f += 1
     f.close()
-
-    vecs = [vecs[i] for i in inds_map]
 
     return vecs
 
@@ -243,6 +237,8 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
         inds_index += 1
 
         if part_size == len(sub_inds):
+            # delete duplicate
+            sub_inds = reduce(lambda x, y: x if y in x else x + [y], [[], ] + sub_inds)
             yield load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, sub_inds)
             sub_inds = list()
 

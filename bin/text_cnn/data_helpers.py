@@ -176,7 +176,7 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     # make a copy of index
     inds_sorted = sorted(enumerate(inds), key=lambda kv: kv[1])
     inds_copy = [kv[1] for kv in inds_sorted]
-    inds_map = [kv2[0] for kv2 in sorted(enumerate([kv3[0] for kv3 in inds_sorted]), key=lambda kv: kv[1])]
+    inds_map = [kv[0] for kv in inds_sorted]
 
     # load title char vectors
     tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char', data_name)

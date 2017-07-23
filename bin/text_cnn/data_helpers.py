@@ -128,28 +128,25 @@ def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds_copy, inds
         if len(inds_copy) <= index_inds:
             break
         if index_f == inds_copy[index_inds]:
-            doc_vecs[index_inds] = parse_doc_vec(line, emb_index, vec_length, reverse)
+            doc_vecs[inds_map[index_inds]] = parse_doc_vec(line, emb_index, vec_length, reverse)
             index_inds += 1
         index_f += 1
     f.close()
 
-    doc_vecs = [doc_vecs[i] for i in inds_map]
-
     return doc_vecs
 
 
-def load_feature_vec_part(file_path, inds):
-    vecs = list()
+def load_feature_vec_part(file_path, inds_copy, inds_map):
+    vecs = [0] * len(inds_copy)
 
-    inds.sort()
     index_f = 0
     index_inds = 0
     f = open(file_path, 'r')
     for line in f:
-        if len(inds) <= index_inds:
+        if len(inds_copy) <= index_inds:
             break
-        if index_f == inds[index_inds]:
-            vecs.append(parse_feature_vec(line))
+        if index_f == inds_copy[index_inds]:
+            vecs[inds_map[index_inds]] = parse_feature_vec(line)
             index_inds += 1
         index_f += 1
     f.close()
@@ -167,12 +164,10 @@ def load_lid_part(file_path, class_num, inds_copy, inds_map):
         if len(inds_copy) <= index_inds:
             break
         if index_f == inds_copy[index_inds]:
-            vecs[index_inds] = parse_lid_vec(line, class_num)
+            vecs[inds_map[index_inds]] = parse_lid_vec(line, class_num)
             index_inds += 1
         index_f += 1
     f.close()
-
-    vecs = [vecs[i] for i in inds_map]
 
     return vecs
 
@@ -181,7 +176,7 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     # make a copy of index
     inds_sorted = sorted(enumerate(inds), key=lambda kv: kv[1])
     inds_copy = [kv[1] for kv in inds_sorted]
-    inds_map = [kv2[0] for kv2 in sorted(enumerate([kv3[0] for kv3 in inds_sorted]), key=lambda kv: kv[1])]
+    inds_map = [kv[0] for kv in inds_sorted]
 
     # load title char vectors
     tc_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char', data_name)
@@ -237,6 +232,8 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
         inds_index += 1
 
         if part_size == len(sub_inds):
+            # delete duplicate
+            sub_inds = reduce(lambda x, y: x if y in x else x + [y], [[], ] + sub_inds)
             yield load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, sub_inds)
             sub_inds = list()
 

@@ -37,8 +37,8 @@ def init_out_dir(config):
 
 def train(config):
     version = config.get('TITLE_CONTENT_CNN', 'version')
-    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version)
-    data_loader = __import__('bin.text_cnn.%s.data_loader' % version)
+    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist = ["*"])
+    data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist = ["*"])
     # init text cnn model
     model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
     # init directory

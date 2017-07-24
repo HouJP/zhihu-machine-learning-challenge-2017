@@ -72,7 +72,7 @@ def predict(config, part_id):
     # predict for validation
     valid_preds = model.predict(valid_dataset[:-1], batch_size=32, verbose=True)
     LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
-    F(valid_preds, valid_dataset[:-1])
+    F(valid_preds, valid_dataset[-1])
     # predict for test data set
     test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
     LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))

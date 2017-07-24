@@ -52,7 +52,7 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
     LogUtil.log('INFO', 'load btm_tw_cw features done')
 
     sub_fs_btm_tc = np.asarray(load_feature_vec_part(fs_btm_tc_fp, inds_copy, inds_map), dtype='float32')
-    LogUtil.log('INFO', 'load btm_tw_cw features done')
+    LogUtil.log('INFO', 'load btm_tc features done')
 
     sub_lid_vecs = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy, inds_map), dtype='int32')
     LogUtil.log('INFO', 'load label id vector done')

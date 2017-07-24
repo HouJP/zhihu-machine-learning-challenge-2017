@@ -29,8 +29,8 @@ def predict(config, part_id):
     LogUtil.log('INFO', 'part_id=%d' % part_id)
 
     version = config.get('TITLE_CONTENT_CNN', 'version')
-    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version)
-    data_loader = __import__('bin.text_cnn.%s.data_loader' % version)
+    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist = ["*"])
+    data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist = ["*"])
 
     # init text cnn model
     model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
@@ -70,11 +70,11 @@ def predict(config, part_id):
     model.load(model_fp)
 
     # predict for validation
-    valid_preds = model.predict(valid_dataset[:-1], batch_size=54, verbose=True)
+    valid_preds = model.predict(valid_dataset[:-1], batch_size=32, verbose=True)
     LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
     F(valid_preds, valid_dataset[:-1])
     # predict for test data set
-    test_preds = model.predict(test_dataset[:-1], batch_size=54, verbose=True)
+    test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
     LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
     # save prediction
     pred_fp = '%s/pred.csv' % config.get('DIRECTORY', 'pred_pt')

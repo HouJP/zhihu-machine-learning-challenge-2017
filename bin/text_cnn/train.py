@@ -10,9 +10,8 @@ import os
 import sys
 import time
 
-from ..utils import DataUtil
-from data_helpers import *
-import text_cnn
+
+from ..utils import DataUtil, LogUtil
 
 
 def init_out_dir(config):
@@ -37,6 +36,9 @@ def init_out_dir(config):
 
 
 def train(config):
+    version = config.get('TITLE_CONTENT_CNN', 'version')
+    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version)
+    data_loader = __import__('bin.text_cnn.%s.data_loader' % version)
     # init text cnn model
     model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
     # init directory
@@ -55,49 +57,36 @@ def train(config):
     valid_index_off = [num - 1 for num in valid_index_off]
 
     # load valid dataset
-    valid_tc_vecs, \
-        valid_tw_vecs, \
-        valid_cc_vecs, \
-        valid_cw_vecs, \
-        valid_btm_tw_cw, \
-        valid_lid_vecs = load_dataset_from_file(config,
-                                                'offline',
-                                                word_embedding_index,
-                                                char_embedding_index,
-                                                valid_index_off)
+    valid_dataset = data_loader.load_dataset_from_file(config,
+                                           'offline',
+                                           word_embedding_index,
+                                           char_embedding_index,
+                                           valid_index_off)
 
     # load train dataset
     part_id = 0
     part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
     valid_size = config.getint('TITLE_CONTENT_CNN', 'valid_size')
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
-    for train_tc_vecs, \
-        train_tw_vecs, \
-        train_cc_vecs, \
-        train_cw_vecs, \
-        train_btm_tw_cw, \
-        train_lid_vecs in load_dataset_from_file_loop(config,
-                                                      'offline',
-                                                      word_embedding_index,
-                                                      char_embedding_index,
-                                                      train_index_off):
+    for train_dataset in data_loader.load_dataset_from_file_loop(config,
+                                                     'offline',
+                                                     word_embedding_index,
+                                                     char_embedding_index,
+                                                     train_index_off):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         if 0 == (((part_id + 1) * part_size) % valid_size):
-            model.fit([train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw],
-                      train_lid_vecs,
-                      validation_data=(
-                          [valid_tw_vecs, valid_cw_vecs, valid_tc_vecs, valid_cc_vecs, valid_btm_tw_cw],
-                          valid_lid_vecs),
+            model.fit(train_dataset[:-1],
+                      train_dataset[-1],
+                      validation_data=(valid_dataset[:-1], valid_dataset[-1]),
                       epochs=1,
                       batch_size=batch_size)
             model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
             model.save(model_fp)
         else:
-            model.fit(
-                [train_tw_vecs, train_cw_vecs, train_tc_vecs, train_cc_vecs, train_btm_tw_cw],
-                train_lid_vecs,
-                epochs=1,
-                batch_size=batch_size)
+            model.fit(train_dataset[:-1],
+                      train_dataset[-1],
+                      epochs=1,
+                      batch_size=batch_size)
         part_id += 1
 
 

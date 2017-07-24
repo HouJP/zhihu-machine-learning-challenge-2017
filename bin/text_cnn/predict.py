@@ -9,9 +9,9 @@ import ConfigParser
 import json
 import sys
 
-from ..utils import LogUtil, DataUtil
 from data_helpers import *
-from text_cnn import TitleContentCNN
+from ..utils import DataUtil
+from bin.evaluation import F
 
 
 def save_prediction(pred_fp, preds, id2label, que_ids_test):
@@ -26,68 +26,39 @@ def save_prediction(pred_fp, preds, id2label, que_ids_test):
 
 
 def predict(config, part_id):
-    # load word embedding file
-    word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
-                                   config.get('TITLE_CONTENT_CNN', 'word_embedding_fn'))
-    word_embedding_index, word_embedding_matrix = load_embedding(word_embedding_fp)
-    # load char embedding file
-    char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
-                                   config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
-    char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
-    # init model
-    title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
-    content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
-    title_char_length = config.getint('TITLE_CONTENT_CNN', 'title_char_length')
-    content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
-    btm_vector_length = config.getint('TITLE_CONTENT_CNN', 'btm_vector_length')
-    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
-    optimizer = config.get('TITLE_CONTENT_CNN', 'optimizer')
-    metrics = config.get('TITLE_CONTENT_CNN', 'metrics').split()
-    model = TitleContentCNN(title_word_length=title_word_length,
-                            content_word_length=content_word_length,
-                            title_char_length=title_char_length,
-                            content_char_length=content_char_length,
-                            btm_vector_length=btm_vector_length,
-                            class_num=class_num,
-                            word_embedding_matrix=word_embedding_matrix,
-                            char_embedding_matrix=char_embedding_matrix,
-                            optimizer=optimizer,
-                            metrics=metrics)
-    # load title char vectors
-    tc_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_char')
-    tc_vecs_on = load_doc_vec(tc_on_fp, char_embedding_index, title_char_length, reverse=True)
-    LogUtil.log('INFO', 'load online title char vector done')
+    LogUtil.log('INFO', 'part_id=%d' % part_id)
 
-    # load title word vectors
-    tw_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'title_word')
-    tw_vecs_on = load_doc_vec(tw_on_fp, word_embedding_index, title_word_length, reverse=False)
-    LogUtil.log('INFO', 'load online title word vector done')
+    version = config.get('TITLE_CONTENT_CNN', 'version')
+    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version)
+    data_loader = __import__('bin.text_cnn.%s.data_loader' % version)
 
-    # load content char vectors
-    cc_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_char')
-    cc_vecs_on = load_doc_vec(cc_on_fp, char_embedding_index, content_char_length, reverse=True)
-    LogUtil.log('INFO', 'load online content char vector done')
+    # init text cnn model
+    model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
 
-    # load content word vectors
-    cw_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'content_word')
-    cw_vecs_on = load_doc_vec(cw_on_fp, word_embedding_index, content_word_length, reverse=False)
-    LogUtil.log('INFO', 'load online content word vector done')
-
-    # load btm vectors
-    btm_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'btm')
-    btm_vecs_on = load_feature_vec(btm_on_fp)
-    LogUtil.log('INFO', 'load online btm vector done')
-
-    # load question ID
+    # load question ID for online dataset
     qid_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'question_id')
     qid_on = DataUtil.load_vector(qid_on_fp, 'str')
     LogUtil.log('INFO', 'load online question ID done')
 
-    tc_vecs_on, tw_vecs_on, cc_vecs_on, cw_vecs_on, btm_vecs_on, _ = load_dataset(tc_vecs_on, tw_vecs_on, cc_vecs_on,
-                                                                                  cw_vecs_on,
-                                                                                  btm_vecs_on,
-                                                                                  None,
-                                                                                  range(len(qid_on)))
+    # load offline valid dataset index
+    valid_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                                  config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index_off = DataUtil.load_vector(valid_index_off_fp, 'int')
+    valid_index_off = [num - 1 for num in valid_index_off]
+
+    # load valid dataset
+    valid_dataset = data_loader.load_dataset_from_file(config,
+                                                       'offline',
+                                                       word_embedding_index,
+                                                       char_embedding_index,
+                                                       valid_index_off)
+
+    # load test dataset
+    test_dataset = data_loader.load_dataset_from_file(config,
+                                                      'online',
+                                                      word_embedding_index,
+                                                      char_embedding_index,
+                                                      range(len(qid_on)))
 
     # load hash table of label
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
@@ -97,12 +68,17 @@ def predict(config, part_id):
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
     model.load(model_fp)
-    preds = model.predict([tw_vecs_on, cw_vecs_on, tc_vecs_on, cc_vecs_on, btm_vecs_on], batch_size=batch_size,
-                          verbose=True)
-    LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(preds.shape))
+
+    # predict for validation
+    valid_preds = model.predict(valid_dataset[:-1], batch_size=54, verbose=True)
+    LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
+    F(valid_preds, valid_dataset[:-1])
+    # predict for test data set
+    test_preds = model.predict(test_dataset[:-1], batch_size=54, verbose=True)
+    LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
     # save prediction
     pred_fp = '%s/pred.csv' % config.get('DIRECTORY', 'pred_pt')
-    save_prediction(pred_fp, preds, id2label, qid_on)
+    save_prediction(pred_fp, test_preds, id2label, qid_on)
 
 
 if __name__ == '__main__':

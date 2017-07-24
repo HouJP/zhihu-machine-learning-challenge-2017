@@ -77,7 +77,7 @@ def predict(config, part_id):
     test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
     LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
     # save prediction
-    pred_fp = '%s/pred.csv' % config.get('DIRECTORY', 'pred_pt')
+    pred_fp = '%s/pred.csv.%d' % (config.get('DIRECTORY', 'pred_pt'), part_id)
     save_prediction(pred_fp, test_preds, id2label, qid_on)
 
 

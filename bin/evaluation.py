@@ -16,7 +16,7 @@ def F(preds, labels):
     for i, ps in enumerate(preds):
         top5 = enumerate(ps)
         top5 = sorted(top5, key=lambda s:s[1], reverse=True)
-        top5_ids = [x for x in top5[:5]]
+        top5_ids = [x[0] for x in top5[:5]]
 
         label_ids = list()
         for kv in enumerate(labels[i]):

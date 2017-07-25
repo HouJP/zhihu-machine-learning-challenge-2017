@@ -5,6 +5,13 @@
 # @Email   : houjp1992@gmail.com
 
 
+"""
+Change btm feature structure.
+
+Bad performance
+"""
+
+
 from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D, Dropout
 from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json

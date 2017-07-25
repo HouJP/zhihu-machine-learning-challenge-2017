@@ -4,9 +4,11 @@
 # @Author  : Jianpeng Hou
 # @Email   : houjp1992@gmail.com
 
+
 """
 Change window size of Conv: [1-10, 11, 13, 15, 20]
 """
+
 
 from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D, Dropout
 from keras.layers.merge import concatenate

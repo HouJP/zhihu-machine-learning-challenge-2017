@@ -257,7 +257,7 @@ def _test_load_topic_info(cf):
 
 
 def _test():
-    conf_fp = '/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/conf/default.conf'
+    conf_fp = '/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/conf/text_cnn_v18.conf'
     cf = ConfigParser.ConfigParser()
     cf.read(conf_fp)
 

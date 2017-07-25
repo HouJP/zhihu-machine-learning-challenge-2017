@@ -24,6 +24,11 @@ def save_prediction(pred_fp, preds, id2label, que_ids_test):
             LogUtil.log('INFO', '%d lines prediction done' % line_id)
     pred_f.close()
 
+    pred_all_f = open(pred_fp + '.all', 'w')
+    for p in preds:
+        pred_all_f.write('%s\n', ','.join([str(num) for num in p]))
+    pred_all_f.close()
+
 
 def predict(config, part_id):
     LogUtil.log('INFO', 'part_id=%d' % part_id)

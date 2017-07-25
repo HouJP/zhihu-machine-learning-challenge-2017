@@ -124,7 +124,7 @@ class TitleContentCNN(object):
 
         # Create a convolution + max pooling layer
         title_content_features = list()
-        for win_size in (range(1, 11) + [11, 13, 15, 20]):
+        for win_size in range(1, 8):
             # batch_size x doc_len x embed_size
             title_content_features.append(
                 GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_word_emb)))

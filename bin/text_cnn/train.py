@@ -37,6 +37,7 @@ def init_out_dir(config):
 
 def train(config):
     version = config.get('TITLE_CONTENT_CNN', 'version')
+    LogUtil.log('INFO', 'version=%s' % version)
     text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist = ["*"])
     data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist = ["*"])
     # init text cnn model

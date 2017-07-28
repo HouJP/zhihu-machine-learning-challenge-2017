@@ -11,6 +11,7 @@ import sys
 import time
 
 
+from ..evaluation import F
 from ..utils import DataUtil, LogUtil
 
 
@@ -75,19 +76,18 @@ def train(config):
                                                      char_embedding_index,
                                                      train_index_off):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
+        model.fit(train_dataset[:-1],
+                  train_dataset[-1],
+                  epochs=1,
+                  batch_size=batch_size)
         if 0 == (((part_id + 1) * part_size) % valid_size):
-            model.fit(train_dataset[:-1],
-                      train_dataset[-1],
-                      validation_data=(valid_dataset[:-1], valid_dataset[-1]),
-                      epochs=1,
-                      batch_size=batch_size)
+            # predict for validation
+            valid_preds = model.predict(valid_dataset[:-1], batch_size=32, verbose=True)
+            LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
+            F(valid_preds, valid_dataset[-1])
+            # save model
             model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
             model.save(model_fp)
-        else:
-            model.fit(train_dataset[:-1],
-                      train_dataset[-1],
-                      epochs=1,
-                      batch_size=batch_size)
         part_id += 1
 
 

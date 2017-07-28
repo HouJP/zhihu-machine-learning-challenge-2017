@@ -7,12 +7,14 @@
 
 import sys, ConfigParser
 from os.path import isfile, join
+from keras.models import model_from_json
 from os import listdir
 import re
 
 
 from bin.evaluation import F
 from ..utils import LogUtil, DataUtil
+from bin.text_cnn.data_helpers import load_embedding
 
 
 def extract_data(regex, content, index=1):
@@ -38,12 +40,17 @@ def generate_part_ids(config, part_id):
 
 def predict_val(config, part_id):
     version = config.get('TITLE_CONTENT_CNN', 'version')
-    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist=["*"])
     data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist=["*"])
     LogUtil.log('INFO', 'version=%s' % version)
 
-    # init text cnn model
-    model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
+    # load word embedding file
+    word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                   config.get('TITLE_CONTENT_CNN', 'word_embedding_fn'))
+    word_embedding_index, _ = load_embedding(word_embedding_fp)
+    # load char embedding file
+    char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
+                                   config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
+    char_embedding_index, _ = load_embedding(char_embedding_fp)
 
     # init part_ids
     part_ids = generate_part_ids(config, part_id)
@@ -66,7 +73,14 @@ def predict_val(config, part_id):
 
         # load model
         model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
-        model.load(model_fp)
+        # load json and create model
+        json_file = open('%s.json' % model_fp, 'r')
+        model_json = json_file.read()
+        json_file.close()
+        model = model_from_json(model_json)
+        # load weights into new model
+        model.load_weights('%s.h5' % model_fp)
+        LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)
 
         # predict for validation
         valid_preds = model.predict(valid_dataset[:-1], batch_size=32, verbose=True)

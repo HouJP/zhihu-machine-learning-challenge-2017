@@ -58,13 +58,6 @@ def predict(config, part_id, predict_online):
                                                        char_embedding_index,
                                                        valid_index_off)
 
-    # load test dataset
-    test_dataset = data_loader.load_dataset_from_file(config,
-                                                      'online',
-                                                      word_embedding_index,
-                                                      char_embedding_index,
-                                                      range(len(qid_on)))
-
     # load hash table of label
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
     id2label = json.load(open(id2label_fp, 'r'))
@@ -77,6 +70,13 @@ def predict(config, part_id, predict_online):
     valid_preds = model.predict(valid_dataset[:-1], batch_size=32, verbose=True)
     LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
     F(valid_preds, valid_dataset[-1])
+
+    # load test dataset
+    test_dataset = data_loader.load_dataset_from_file(config,
+                                                      'online',
+                                                      word_embedding_index,
+                                                      char_embedding_index,
+                                                      range(len(qid_on)))
 
     # predict for test data set
     if predict_online:

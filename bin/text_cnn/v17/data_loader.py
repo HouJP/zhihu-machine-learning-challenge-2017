@@ -64,26 +64,3 @@ def load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, in
 
     return [sub_tw_vecs, sub_cw_vecs, sub_tc_vecs, sub_cc_vecs, sub_fs_btm_tw_cw, sub_fs_btm_tc, sub_fs_word_share, sub_lid_vecs]
 
-
-def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds):
-    part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
-
-    inds_len = len(inds)
-    inds_index = 0
-
-    sub_inds = list()
-
-    while True:
-
-        if inds_len <= inds_index:
-            inds_index = 0
-            random.shuffle(inds)
-
-        sub_inds.append(inds[inds_index])
-        inds_index += 1
-
-        if part_size == len(sub_inds):
-            # delete duplicate
-            sub_inds = reduce(lambda x, y: x if y in x else x + [y], [[], ] + sub_inds)
-            yield load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, sub_inds)
-            sub_inds = list()

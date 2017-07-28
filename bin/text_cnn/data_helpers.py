@@ -172,6 +172,36 @@ def load_lid_part(file_path, class_num, inds_copy, inds_map):
     return vecs
 
 
+def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds, loop=True):
+    version = config.get('TITLE_CONTENT_CNN', 'version')
+    LogUtil.log('INFO', 'version=%s' % version)
+    data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist=["*"])
+    part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
+
+    inds_len = len(inds)
+    inds_index = 0
+
+    sub_inds = list()
+
+    while True:
+
+        if inds_len <= inds_index:
+            if loop:
+                inds_index = 0
+                random.shuffle(inds)
+            else:
+                break
+
+        sub_inds.append(inds[inds_index])
+        inds_index += 1
+
+        if part_size == len(sub_inds):
+            # delete duplicate
+            sub_inds = reduce(lambda x, y: x if y in x else x + [y], [[], ] + sub_inds)
+            yield data_loader.load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, sub_inds)
+            sub_inds = list()
+
+
 if __name__ == '__main__':
     load_embedding(
         '/Users/houjianpeng/Github/zhihu-machine-learning-challenge-2017/data/embedding/word_embedding.txt.small')

@@ -5,7 +5,7 @@
 # @Email   : houjp1992@gmail.com
 
 """
-v18 Change the parameters of v17:
+v18 Change the parameters of v15:
     1. learning rate => 0.000081
     2. conv window size from [2, 7) => [1, 8)
 """

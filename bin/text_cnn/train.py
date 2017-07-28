@@ -10,9 +10,9 @@ import os
 import sys
 import time
 
-
 from ..evaluation import F
 from ..utils import DataUtil, LogUtil
+import data_helpers
 
 
 def init_out_dir(config):
@@ -39,8 +39,8 @@ def init_out_dir(config):
 def train(config):
     version = config.get('TITLE_CONTENT_CNN', 'version')
     LogUtil.log('INFO', 'version=%s' % version)
-    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist = ["*"])
-    data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist = ["*"])
+    text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist=["*"])
+    data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist=["*"])
     # init text cnn model
     model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
     # init directory
@@ -60,21 +60,21 @@ def train(config):
 
     # load valid dataset
     valid_dataset = data_loader.load_dataset_from_file(config,
-                                           'offline',
-                                           word_embedding_index,
-                                           char_embedding_index,
-                                           valid_index_off)
+                                                       'offline',
+                                                       word_embedding_index,
+                                                       char_embedding_index,
+                                                       valid_index_off)
 
     # load train dataset
     part_id = 0
     part_size = config.getint('TITLE_CONTENT_CNN', 'part_size')
     valid_size = config.getint('TITLE_CONTENT_CNN', 'valid_size')
     batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
-    for train_dataset in data_loader.load_dataset_from_file_loop(config,
-                                                     'offline',
-                                                     word_embedding_index,
-                                                     char_embedding_index,
-                                                     train_index_off):
+    for train_dataset in data_helpers.load_dataset_from_file_loop(config,
+                                                                  'offline',
+                                                                  word_embedding_index,
+                                                                  char_embedding_index,
+                                                                  train_index_off):
         LogUtil.log('INFO', 'part_id=%d, model training begin' % part_id)
         model.fit(train_dataset[:-1],
                   train_dataset[-1],

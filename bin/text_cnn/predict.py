@@ -36,7 +36,7 @@ def predict(config, part_id, predict_online):
     version = config.get('TITLE_CONTENT_CNN', 'version')
     text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist = ["*"])
     data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist = ["*"])
-    LogUtil.log('INFO', 'version=%d' % version)
+    LogUtil.log('INFO', 'version=%s' % version)
 
     # init text cnn model
     model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)

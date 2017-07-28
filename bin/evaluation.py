@@ -9,7 +9,7 @@ import math
 from bin.utils import LogUtil
 
 
-def F(preds, labels):
+def F_by_fuck_zhihu_eng(preds, labels):
     topk = 5
     top5_labels = list()
 
@@ -51,7 +51,7 @@ def F(preds, labels):
                                                            str((precision * recall) / (precision + recall))))
 
 
-def F_new(preds, labels):
+def F(preds, labels):
     topk = 5
 
     right_label_num = 0

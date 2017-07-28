@@ -11,7 +11,6 @@ import sys
 
 from data_helpers import *
 from ..utils import DataUtil
-from bin.evaluation import F
 
 
 def save_prediction(pred_fp, preds, id2label, que_ids_test):
@@ -30,7 +29,7 @@ def save_prediction(pred_fp, preds, id2label, que_ids_test):
     pred_all_f.close()
 
 
-def predict(config, part_id, predict_online):
+def predict_test(config, part_id):
     LogUtil.log('INFO', 'part_id=%d' % part_id)
 
     version = config.get('TITLE_CONTENT_CNN', 'version')
@@ -46,19 +45,6 @@ def predict(config, part_id, predict_online):
     qid_on = DataUtil.load_vector(qid_on_fp, 'str')
     LogUtil.log('INFO', 'load online question ID done')
 
-    # load offline valid dataset index
-    valid_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
-                                                  config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
-    valid_index_off = DataUtil.load_vector(valid_index_off_fp, 'int')
-    valid_index_off = [num - 1 for num in valid_index_off]
-
-    # load valid dataset
-    valid_dataset = data_loader.load_dataset_from_file(config,
-                                                       'offline',
-                                                       word_embedding_index,
-                                                       char_embedding_index,
-                                                       valid_index_off)
-
     # load hash table of label
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
     id2label = json.load(open(id2label_fp, 'r'))
@@ -67,25 +53,18 @@ def predict(config, part_id, predict_online):
     model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
     model.load(model_fp)
 
-    # predict for validation
-    valid_preds = model.predict(valid_dataset[:-1], batch_size=32, verbose=True)
-    LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
-    F(valid_preds, valid_dataset[-1])
-
+    # load test data set
+    test_dataset = data_loader.load_dataset_from_file(config,
+                                                      'online',
+                                                      word_embedding_index,
+                                                      char_embedding_index,
+                                                      range(len(qid_on)))
     # predict for test data set
-    if predict_online:
-        # load test data set
-        test_dataset = data_loader.load_dataset_from_file(config,
-                                                          'online',
-                                                          word_embedding_index,
-                                                          char_embedding_index,
-                                                          range(len(qid_on)))
-        # predict for test data set
-        test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
-        LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
-        # save prediction
-        pred_fp = '%s/pred.csv.%d' % (config.get('DIRECTORY', 'pred_pt'), part_id)
-        save_prediction(pred_fp, test_preds, id2label, qid_on)
+    test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
+    LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
+    # save prediction
+    pred_fp = '%s/pred.csv.%d' % (config.get('DIRECTORY', 'pred_pt'), part_id)
+    save_prediction(pred_fp, test_preds, id2label, qid_on)
 
 
 if __name__ == '__main__':
@@ -94,4 +73,4 @@ if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
 
-    predict(config, part_id, predict_online=True)
+    predict_test(config, part_id)

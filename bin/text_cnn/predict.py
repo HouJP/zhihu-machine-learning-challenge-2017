@@ -71,15 +71,15 @@ def predict(config, part_id, predict_online):
     LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
     F(valid_preds, valid_dataset[-1])
 
-    # load test dataset
-    test_dataset = data_loader.load_dataset_from_file(config,
-                                                      'online',
-                                                      word_embedding_index,
-                                                      char_embedding_index,
-                                                      range(len(qid_on)))
-
     # predict for test data set
     if predict_online:
+        # load test data set
+        test_dataset = data_loader.load_dataset_from_file(config,
+                                                          'online',
+                                                          word_embedding_index,
+                                                          char_embedding_index,
+                                                          range(len(qid_on)))
+        # predict for test data set
         test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
         LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
         # save prediction

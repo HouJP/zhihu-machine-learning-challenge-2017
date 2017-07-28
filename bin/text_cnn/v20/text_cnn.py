@@ -14,6 +14,7 @@ from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D, Dr
 from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
 from keras import optimizers
+from keras import regularizers
 import tensorflow as tf
 from keras import backend as K
 
@@ -130,25 +131,25 @@ class TitleContentCNN(object):
         for win_size in range(1, 8):
             # batch_size x doc_len x embed_size
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.001))(title_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(cont_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.001))(cont_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.001))(title_char_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(cont_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same', kernel_regularizer=regularizers.l2(0.001))(cont_char_emb)))
 
         # add btm_tw_cw features + btm_tc features
         fs_btm_tw_cw_input = Input(shape=(fs_btm_tw_cw_length,), dtype='float32', name="fs_btm_tw_cw_input")
         fs_btm_tc_input = Input(shape=(fs_btm_tc_length,), dtype='float32', name="fs_btm_tc_input")
         fs_btm_raw_features = concatenate([fs_btm_tw_cw_input, fs_btm_tc_input])
-        fs_btm_emb_features = Dense(512, activation='relu', name='fs_btm_embedding')(fs_btm_raw_features)
+        fs_btm_emb_features = Dense(512, activation='relu', name='fs_btm_embedding', kernel_regularizer=regularizers.l2(0.01))(fs_btm_raw_features)
         fs_btm_emb_features = Dropout(0.5, name='fs_btm_embedding_dropout')(fs_btm_emb_features)
         title_content_features.append(fs_btm_emb_features)
 
         # add word share features
         fs_word_share_input = Input(shape=(fs_word_share_length,), dtype='float32', name="fs_word_share_input")
-        fs_word_share_emb_features = Dense(512, activation='relu', name='fs_word_share_embedding')(fs_word_share_input)
+        fs_word_share_emb_features = Dense(512, activation='relu', name='fs_word_share_embedding', kernel_regularizer=regularizers.l2(0.01))(fs_word_share_input)
         fs_word_share_emb_features = Dropout(0.5, name='fs_word_share_embedding_dropout')(fs_word_share_emb_features)
         title_content_features.append(fs_word_share_emb_features)
 

@@ -30,7 +30,7 @@ def save_prediction(pred_fp, preds, id2label, que_ids_test):
     pred_all_f.close()
 
 
-def predict(config, part_id):
+def predict(config, part_id, predict_online):
     LogUtil.log('INFO', 'part_id=%d' % part_id)
 
     version = config.get('TITLE_CONTENT_CNN', 'version')
@@ -70,7 +70,6 @@ def predict(config, part_id):
     id2label = json.load(open(id2label_fp, 'r'))
 
     # load model
-    batch_size = config.getint('TITLE_CONTENT_CNN', 'batch_size')
     model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
     model.load(model_fp)
 
@@ -78,12 +77,14 @@ def predict(config, part_id):
     valid_preds = model.predict(valid_dataset[:-1], batch_size=32, verbose=True)
     LogUtil.log('INFO', 'prediction of validation data, shape=%s' % str(valid_preds.shape))
     F(valid_preds, valid_dataset[-1])
+
     # predict for test data set
-    test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
-    LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
-    # save prediction
-    pred_fp = '%s/pred.csv.%d' % (config.get('DIRECTORY', 'pred_pt'), part_id)
-    save_prediction(pred_fp, test_preds, id2label, qid_on)
+    if predict_online:
+        test_preds = model.predict(test_dataset[:-1], batch_size=32, verbose=True)
+        LogUtil.log('INFO', 'prediction of online data, shape=%s' % str(test_preds.shape))
+        # save prediction
+        pred_fp = '%s/pred.csv.%d' % (config.get('DIRECTORY', 'pred_pt'), part_id)
+        save_prediction(pred_fp, test_preds, id2label, qid_on)
 
 
 if __name__ == '__main__':
@@ -92,4 +93,4 @@ if __name__ == '__main__':
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
 
-    predict(config, part_id)
+    predict(config, part_id, predict_online=True)

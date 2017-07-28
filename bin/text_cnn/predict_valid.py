@@ -23,7 +23,7 @@ def extract_data(regex, content, index=1):
 def predict_val(config):
     model_pt = config.get('DIRECTORY', 'model_pt')
     model_files = [f for f in listdir(model_pt) if isfile(join(model_pt, f))]
-    part_id = [extract_data(r'text_cnn_()\.', fn, 1) for fn in model_files]
+    part_id = [extract_data(r'text_cnn_(.*)\.', fn, 1) for fn in model_files]
 
     print part_id
 

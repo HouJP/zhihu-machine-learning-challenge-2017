@@ -24,8 +24,19 @@ def extract_data(regex, content, index=1):
     return r
 
 
-def predict_val(config):
+def generate_part_ids(config, part_id):
+    if -1 != part_id:
+        part_ids = [part_id]
+    else:
+        model_pt = config.get('DIRECTORY', 'model_pt')
+        model_files = [f for f in listdir(model_pt) if isfile(join(model_pt, f))]
+        part_ids = [extract_data(r'text_cnn_(.*)\.', fn, 1) for fn in model_files]
+        part_ids = list(set([int(num) for num in part_ids]))
+        part_ids.sort()
+    return part_ids
 
+
+def predict_val(config, part_id):
     version = config.get('TITLE_CONTENT_CNN', 'version')
     text_cnn = __import__('bin.text_cnn.%s.text_cnn' % version, fromlist=["*"])
     data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist=["*"])
@@ -34,11 +45,8 @@ def predict_val(config):
     # init text cnn model
     model, word_embedding_index, char_embedding_index = text_cnn.init_text_cnn(config)
 
-    model_pt = config.get('DIRECTORY', 'model_pt')
-    model_files = [f for f in listdir(model_pt) if isfile(join(model_pt, f))]
-    part_ids = [extract_data(r'text_cnn_(.*)\.', fn, 1) for fn in model_files]
-    part_ids = list(set([int(num) for num in part_ids]))
-    part_ids.sort()
+    # init part_ids
+    part_ids = generate_part_ids(config, part_id)
 
     # load offline valid dataset index
     valid_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
@@ -70,5 +78,6 @@ if __name__ == '__main__':
     config_fp = sys.argv[1]
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
+    part_id = int(sys.argv[2])
 
-    predict_val(config)
+    predict_val(config, part_id)

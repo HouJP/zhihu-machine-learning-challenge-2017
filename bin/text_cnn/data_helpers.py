@@ -195,7 +195,7 @@ def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_inde
         sub_inds.append(inds[inds_index])
         inds_index += 1
 
-        if part_size == len(sub_inds):
+        if (part_size == len(sub_inds)) or (inds_len <= inds_index):
             # delete duplicate
             sub_inds = reduce(lambda x, y: x if y in x else x + [y], [[], ] + sub_inds)
             yield data_loader.load_dataset_from_file(config, data_name, word_emb_index, char_emb_index, sub_inds)

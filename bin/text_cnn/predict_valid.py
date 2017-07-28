@@ -43,8 +43,6 @@ def predict_val(config, part_id):
     version = config.get('TITLE_CONTENT_CNN', 'version')
     data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist=["*"])
     LogUtil.log('INFO', 'version=%s' % version)
-    # reset partition size
-    config.set('TITLE_CONTENT_CNN', 'part_size', '1024')
 
     # load word embedding file
     word_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),

@@ -6,6 +6,7 @@
 
 
 import math
+import heapq
 from bin.utils import LogUtil
 
 
@@ -61,9 +62,7 @@ def F(preds, labels):
 
     for i, ps in enumerate(preds):
         sample_num += 1
-        top5 = enumerate(ps)
-        top5 = sorted(top5, key=lambda s:s[1], reverse=True)
-        top5_ids = [x[0] for x in top5[:5]]
+        top5_ids = [x[0] for x in heapq.nlargest(5, enumerate(ps), key=lambda p: p[1])]
 
         label_ids = list()
         for kv in enumerate(labels[i]):

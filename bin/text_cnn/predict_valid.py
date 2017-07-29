@@ -83,7 +83,7 @@ def predict_val(config, part_id):
         precision = 0.0
 
         # save prediction
-        pred_fp = '%s/%s_%d.valid.pred' % (config.get('DIRECTORY', 'pred_pt'), version, part_id)
+        pred_fp = '%s/vote_fs_text_cnn_%s_%d.offline' % (config.get('DIRECTORY', 'pred_pt'), version, part_id)
         pred_all_f = open(pred_fp, 'w')
 
         for sub_valid_dataset in data_helpers.load_dataset_from_file_loop(config,

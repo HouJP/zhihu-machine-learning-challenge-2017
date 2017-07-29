@@ -173,6 +173,24 @@ def load_lid_part(file_path, class_num, inds_copy, inds_map):
     return vecs
 
 
+def load_label_id_from_file(config, data_name, inds):
+    # make a copy of index
+    inds_sorted = sorted(enumerate(inds), key=lambda kv: kv[1])
+    inds_copy = [kv[1] for kv in inds_sorted]
+    inds_map = [kv[0] for kv in inds_sorted]
+
+    # load label id vectors
+    lid_fp = None if 'online' == data_name \
+        else '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'label_id', data_name)
+
+    class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
+
+    sub_lid = None if lid_fp is None else np.asarray(load_lid_part(lid_fp, class_num, inds_copy, inds_map), dtype='int32')
+    LogUtil.log('INFO', 'load label id vector done')
+
+    return sub_lid
+
+
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds, loop=True):
     version = config.get('TITLE_CONTENT_CNN', 'version')
     LogUtil.log('INFO', 'version=%s' % version)

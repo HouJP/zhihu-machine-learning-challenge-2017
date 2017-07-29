@@ -169,17 +169,19 @@ class DataUtil(object):
         return
 
     @staticmethod
-    def load_matrix(file_path):
+    def load_matrix(file_path, ele_type='float'):
         """
         Load matrix from disk
         :param file_path: matrix file path
         :return: a matrix in 2-dim List type
         """
+        assert ele_type.lower() in DataUtil.valid_types, "Wrong ele_type: %s" % ele_type
+        ele_type = eval(ele_type.lower())
         matrix = []
         file = open(file_path)
         for line in file:
             vector = line.strip().split(',')
-            vector = [float(vector[i]) for i in range(len(vector))]
+            vector = [ele_type(vector[i]) for i in range(len(vector))]
             matrix.append(vector)
         file.close()
         LogUtil.log("INFO", "load matrix done. size=(%d,%d)" % (len(matrix), len(matrix[0])))

@@ -45,5 +45,6 @@ if __name__ == '__main__':
     config_fp = sys.argv[1]
     config = ConfigParser.ConfigParser()
     config.read(config_fp)
+    dataset_name = sys.argv[2]
 
-    vote(config)
+    vote(config, dataset_name)

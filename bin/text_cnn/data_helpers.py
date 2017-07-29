@@ -191,6 +191,21 @@ def load_label_id_from_file(config, data_name, inds):
     return sub_lid
 
 
+def load_features_from_file(config, feature_name, data_name, inds):
+    # make a copy of index
+    inds_sorted = sorted(enumerate(inds), key=lambda kv: kv[1])
+    inds_copy = [kv[1] for kv in inds_sorted]
+    inds_map = [kv[0] for kv in inds_sorted]
+
+    # load features
+    feature_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
+
+    sub_features = np.asarray(load_feature_vec_part(feature_fp, inds_copy, inds_map), dtype='float32')
+    LogUtil.log('INFO', 'load features done')
+
+    return sub_features
+
+
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds, loop=True):
     version = config.get('TITLE_CONTENT_CNN', 'version')
     LogUtil.log('INFO', 'version=%s' % version)

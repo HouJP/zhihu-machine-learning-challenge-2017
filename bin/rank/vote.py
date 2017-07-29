@@ -19,8 +19,8 @@ def vote(config, argv):
     class_num = config.getint('DATA_ATTRIBUTE', 'class_num')
     topk = config.getint('RANK', 'topk')
     vote_features = config.get('RANK', 'vote_features').split()
-    vote_features_f = [open('%s/%s.%s' % (dataset_pt, fn, dataset_name), 'r') for fn in vote_features]
-    topk_class_index_f = open('%s/%s.%s' % (index_pt, config.get('RANK', 'topk_class_index'), dataset_name), 'w')
+    vote_features_f = [open('%s/%s.%s.csv' % (dataset_pt, fn, dataset_name), 'r') for fn in vote_features]
+    topk_class_index_f = open('%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), dataset_name), 'w')
 
     while True:
         aggregator = [0.] * class_num
@@ -57,7 +57,7 @@ def analyze_vote(config, argv):
 
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
-    topk_class_index_fp = '%s/%s.%s' % (index_pt, config.get('RANK', 'topk_class_index'), 'offline')
+    topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), 'offline')
     topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')
 
     total_labels = 0

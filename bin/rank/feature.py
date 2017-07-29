@@ -7,7 +7,7 @@
 
 import sys
 import ConfigParser
-from ..utils import DataUtil
+from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_features_from_file
 
 
@@ -30,6 +30,7 @@ def generate(config, argv):
     # load rank features
     feature_names = config.get('RANK', 'rank_features').split()
     for feature_name in feature_names:
+        LogUtil.log('INFO', 'feature_name=%s' % feature_name)
         rank_features_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
         rank_features_f = open(rank_features_fp, 'w')
         features = load_features_from_file(config, feature_name, data_name, index)

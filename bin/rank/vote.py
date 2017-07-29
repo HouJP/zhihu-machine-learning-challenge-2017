@@ -9,7 +9,7 @@ import sys
 import ConfigParser
 from ..text_cnn.data_helpers import parse_feature_vec
 from ..utils import DataUtil, LogUtil
-from ..text_cnn.data_helpers import load_label_id_from_file
+from ..text_cnn.data_helpers import load_labels_from_file
 
 
 def vote(config, argv):
@@ -53,7 +53,7 @@ def analyze_vote(config, argv):
     valid_index_off = [num - 1 for num in valid_index_off]
 
     # load valid dataset
-    valid_label_id = load_label_id_from_file(config, 'offline', valid_index_off)
+    valid_label_id = load_labels_from_file(config, 'offline', valid_index_off)
 
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')

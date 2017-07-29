@@ -8,8 +8,9 @@
 import xgboost as xgb
 import sys
 import ConfigParser
-from ..utils import DataUtil
-
+from ..utils import DataUtil, LogUtil
+from ..text_cnn.data_helpers import load_labels_from_file
+from ..evaluation import F
 
 def load_parameters(config):
     params = dict()
@@ -56,6 +57,22 @@ def train(config, argv):
                       watchlist,
                       early_stopping_rounds=params['early_stop'],
                       verbose_eval=params['verbose_eval'])
+
+    # load valid dataset index
+    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                              config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
+    valid_index = [num - 1 for num in valid_index]
+
+    # load labels
+    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[5000:]
+    # make prediction
+    topk = config.getint('RANK', 'topk')
+    valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
+    valid_preds = zip(*[iter(valid_preds)] * topk)
+
+    F(valid_preds, valid_labels)
+
 
 
 if __name__ == '__main__':

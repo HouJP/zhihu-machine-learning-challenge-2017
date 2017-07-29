@@ -180,7 +180,7 @@ class DataUtil(object):
         matrix = []
         file = open(file_path)
         for line in file:
-            vector = line.strip().split(',')
+            vector = re.split(' |,', line.strip())
             vector = [ele_type(vector[i]) for i in range(len(vector))]
             matrix.append(vector)
         file.close()

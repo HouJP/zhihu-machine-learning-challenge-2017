@@ -30,11 +30,12 @@ def vote(config, dataset_name):
             vec = parse_feature_vec(line)
             for i in range(class_num):
                 aggregator[i] += vec[i]
+        if eof:
+            break
+
         print aggregator
         topk_ids = [kv[0] for kv in sorted(enumerate(aggregator), key=lambda x: x[1], reverse=True)[:topk]]
         topk_class_index_f.write('%s\n' % ' '.join([str(n) for n in topk_ids]))
-        if eof:
-            break
 
     topk_class_index_f.close()
     for f in vote_features_f:

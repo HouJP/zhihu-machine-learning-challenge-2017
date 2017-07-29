@@ -38,16 +38,16 @@ def stand_path(s):
 
 def train(config, argv):
     dtrain_train_fp = stand_path('%s/%s_train.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
-    group_train_fp = stand_path('%s/%s_train.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
+    # group_train_fp = stand_path('%s/%s_train.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
 
     dtrain_valid_fp = stand_path('%s/%s_valid.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
-    group_valid_fp = stand_path('%s/%s_valid.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
+    # group_valid_fp = stand_path('%s/%s_valid.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
 
     dtrain = xgb.DMatrix(dtrain_train_fp)
-    dtrain.set_group(group_train_fp)
+    # dtrain.set_group(group_train_fp)
 
     dvalid = xgb.DMatrix(dtrain_valid_fp)
-    dvalid.set_group(group_valid_fp)
+    # dvalid.set_group(group_valid_fp)
 
     watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
     params = load_parameters(config)

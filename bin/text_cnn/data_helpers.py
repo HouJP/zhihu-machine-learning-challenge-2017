@@ -8,6 +8,7 @@
 import numpy as np
 import math
 import random
+import re
 from bin.utils import LogUtil
 
 
@@ -77,7 +78,7 @@ def load_doc_vec(file_path, emb_index, vec_length, reverse):
 
 
 def parse_feature_vec(line):
-    vec = [0. if math.isnan(float(num)) else float(num) for num in line.strip('\n').split()]
+    vec = [0. if math.isnan(float(num)) else float(num) for num in re.split(' |,', line.strip('\n'))]
     return vec
 
 

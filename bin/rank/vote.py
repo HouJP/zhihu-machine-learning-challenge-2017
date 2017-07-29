@@ -45,7 +45,7 @@ def vote(config, argv):
         f.close()
 
 
-def analyze_vote(config):
+def analyze_vote(config, argv):
     # load offline valid dataset index
     valid_index_off_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
                                                   config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))

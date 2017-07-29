@@ -10,7 +10,7 @@ import sys
 import ConfigParser
 from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
-from ..evaluation import F
+from ..evaluation import F_by_ids
 
 def load_parameters(config):
     params = dict()
@@ -71,7 +71,16 @@ def train(config, argv):
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
     valid_preds = zip(*[iter(valid_preds)] * topk)
 
-    F(valid_preds, valid_labels)
+    # load topk ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), 'offline')
+    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[5000:]
+
+    preds_ids = list()
+    for i in range(5000):
+        preds_ids.append([kv[0] for kv in sorted(zip(topk_label_id[i], valid_preds[i]), key=lambda x:x[1], reverse=True)])
+
+    F_by_ids(valid_preds, valid_labels)
 
 
 

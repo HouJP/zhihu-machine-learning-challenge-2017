@@ -32,12 +32,16 @@ def load_parameters(config):
     return params
 
 
-def train(config, argv):
-    dtrain_train_fp = '%s/%s_train.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name'))
-    group_train_fp = '%s/%s_train.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name'))
+def stand_path(s):
+    return '/' + '/'.join(filter(None, s.split('/')))
 
-    dtrain_valid_fp = '%s/%s_valid.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name'))
-    group_valid_fp = '%s/%s_valid.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name'))
+
+def train(config, argv):
+    dtrain_train_fp = stand_path('%s/%s_train.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
+    group_train_fp = stand_path('%s/%s_train.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
+
+    dtrain_valid_fp = stand_path('%s/%s_valid.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
+    group_valid_fp = stand_path('%s/%s_valid.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
 
     dtrain = xgb.DMatrix(dtrain_train_fp)
     dtrain.set_group(group_train_fp)

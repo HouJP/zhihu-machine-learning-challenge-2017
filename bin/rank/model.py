@@ -69,6 +69,7 @@ def train(config, argv):
     # make prediction
     topk = config.getint('RANK', 'topk')
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
+    valid_preds = [num for num in valid_preds]
     valid_preds = zip(*[iter(valid_preds)] * topk)
 
     # load topk ids

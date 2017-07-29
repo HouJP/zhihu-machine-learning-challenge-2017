@@ -6,6 +6,8 @@
 
 
 import xgboost as xgb
+import sys
+import ConfigParser
 
 
 def load_parameters(config):
@@ -51,3 +53,13 @@ def train(config, argv):
                       watchlist,
                       early_stopping_rounds=params['early_stop'],
                       verbose_eval=params['verbose_eval'])
+
+
+if __name__ == '__main__':
+    config_fp = sys.argv[1]
+    config = ConfigParser.ConfigParser()
+    config.read(config_fp)
+    func = sys.argv[2]
+    argv = sys.argv[3:]
+
+    eval(func)(config, argv)

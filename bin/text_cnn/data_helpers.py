@@ -150,6 +150,8 @@ def load_feature_vec_part(file_path, inds_copy, inds_map):
             vecs[inds_map[index_inds]] = parse_feature_vec(line)
             index_inds += 1
         index_f += 1
+        if 0 == index_f % 10000:
+            LogUtil.log("INFO", 'load_feature_vec_part, index_f=%d' % index_f)
     f.close()
 
     return vecs

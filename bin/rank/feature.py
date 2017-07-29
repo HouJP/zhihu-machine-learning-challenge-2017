@@ -13,14 +13,11 @@ from ..text_cnn.data_helpers import load_features_from_file
 
 def generate(config, argv):
     data_name = argv[0]
-    # load dataset index
-    if 'offline' == data_name:
-        index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
-                                                      config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
-        index = DataUtil.load_vector(index_fp, 'int')
-        index = [num - 1 for num in index]
-    else:
-        index = None
+    # load valid dataset index
+    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                                  config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
+    valid_index = [num - 1 for num in valid_index]
 
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
@@ -33,7 +30,10 @@ def generate(config, argv):
         LogUtil.log('INFO', 'feature_name=%s' % feature_name)
         rank_features_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
         rank_features_f = open(rank_features_fp, 'w')
-        features = load_features_from_file(config, feature_name, data_name, index)
+        if 'offline' == feature_name and 0 == feature_name.count('vote_'):
+            features = load_features_from_file(config, feature_name, data_name, valid_index)
+        else:
+            features = DataUtil.load_matrix('%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name), 'float')
 
         assert len(topk_label_id) == len(features)
         for line_id in range(len(topk_label_id)):

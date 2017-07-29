@@ -201,7 +201,7 @@ def load_features_from_file(config, feature_name, data_name, inds):
     feature_fp = '%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
 
     sub_features = load_feature_vec_part(feature_fp, inds_copy, inds_map)
-    LogUtil.log('INFO', 'len(sub_features=%d' % len(sub_features))
+    LogUtil.log('INFO', 'len(sub_features)=%d' % len(sub_features))
     sub_features = np.asarray(sub_features, dtype='float32')
     LogUtil.log('INFO', 'load features done')
 

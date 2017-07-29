@@ -8,6 +8,7 @@
 import xgboost as xgb
 import sys
 import ConfigParser
+from ..utils import DataUtil
 
 
 def load_parameters(config):
@@ -38,16 +39,16 @@ def stand_path(s):
 
 def train(config, argv):
     dtrain_train_fp = stand_path('%s/%s_train.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
-    # group_train_fp = stand_path('%s/%s_train.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
+    group_train_fp = stand_path('%s/%s_train.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
 
     dtrain_valid_fp = stand_path('%s/%s_valid.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
-    # group_valid_fp = stand_path('%s/%s_valid.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
+    group_valid_fp = stand_path('%s/%s_valid.group' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
 
     dtrain = xgb.DMatrix(dtrain_train_fp)
-    # dtrain.set_group(group_train_fp)
+    dtrain.set_group(DataUtil.load_vector(group_train_fp, 'int'))
 
     dvalid = xgb.DMatrix(dtrain_valid_fp)
-    # dvalid.set_group(group_valid_fp)
+    dvalid.set_group(DataUtil.load_vector(group_valid_fp, 'int'))
 
     watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
     params = load_parameters(config)

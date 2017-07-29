@@ -97,6 +97,7 @@ def F_by_ids(ids, labels):
     all_marked_label_num = 0
 
     for i, top5_ids in enumerate(ids):
+        top5_ids = top5_ids[:5]
         sample_num += 1
 
         label_ids = list()

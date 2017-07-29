@@ -84,7 +84,7 @@ def train(config, argv):
     for pred_ids in preds_ids:
         print pred_ids
 
-    F_by_ids(valid_preds, valid_labels)
+    F_by_ids(topk_label_id, valid_labels)
 
 
 

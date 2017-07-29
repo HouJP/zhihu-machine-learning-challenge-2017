@@ -30,7 +30,7 @@ def generate(config, argv):
         LogUtil.log('INFO', 'feature_name=%s' % feature_name)
         rank_features_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
         rank_features_f = open(rank_features_fp, 'w')
-        if 'offline' == feature_name and 0 == feature_name.count('vote_'):
+        if 'offline' == data_name and 0 == feature_name.count('vote_'):
             features = load_features_from_file(config, feature_name, data_name, valid_index)
         else:
             features = DataUtil.load_matrix('%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name), 'float')

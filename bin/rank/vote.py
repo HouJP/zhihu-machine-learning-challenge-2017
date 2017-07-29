@@ -36,7 +36,7 @@ def vote(config, argv):
         if eof:
             break
 
-        print aggregator
+        #print aggregator
         topk_ids = [kv[0] for kv in sorted(enumerate(aggregator), key=lambda x: x[1], reverse=True)[:topk]]
         topk_class_index_f.write('%s\n' % ' '.join([str(n) for n in topk_ids]))
 

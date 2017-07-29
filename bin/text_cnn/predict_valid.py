@@ -41,7 +41,6 @@ def generate_part_ids(config, part_id):
 
 def predict_val(config, part_id):
     version = config.get('TITLE_CONTENT_CNN', 'version')
-    data_loader = __import__('bin.text_cnn.%s.data_loader' % version, fromlist=["*"])
     LogUtil.log('INFO', 'version=%s' % version)
 
     # load word embedding file
@@ -83,6 +82,10 @@ def predict_val(config, part_id):
         all_marked_label_num = 0
         precision = 0.0
 
+        # save prediction
+        pred_fp = '%s/%s_%d.valid.pred' % (config.get('DIRECTORY', 'pred_pt'), version, part_id)
+        pred_all_f = open(pred_fp, 'w')
+
         for sub_valid_dataset in data_helpers.load_dataset_from_file_loop(config,
                                                                           'offline',
                                                                           word_embedding_index,
@@ -92,6 +95,7 @@ def predict_val(config, part_id):
             sub_valid_preds = model.predict(sub_valid_dataset[:-1], batch_size=32, verbose=True)
 
             for i, ps in enumerate(sub_valid_preds):
+                pred_all_f.write('%s\n' % ','.join([str(num) for num in ps]))
                 sample_num += 1
                 top5_ids = [x[0] for x in heapq.nlargest(5, enumerate(ps), key=lambda p: p[1])]
 
@@ -107,6 +111,8 @@ def predict_val(config, part_id):
                     if label in marked_label_set:
                         right_label_num += 1
                         right_label_at_pos_num[pos] += 1
+
+        pred_all_f.close()
 
         for pos, right_num in zip(range(0, 5), right_label_at_pos_num):
             precision += (right_num / float(sample_num)) / math.log(2.0 + pos)

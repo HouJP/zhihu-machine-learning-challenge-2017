@@ -5,7 +5,7 @@
 # @Email   : houjp1992@gmail.com
 
 """
-v18 Change the parameters of v15:
-    1. learning rate => 0.000081
-    2. conv window size from [2, 7) => [1, 8)
+v21 based on v18:
+    1. learning rate from 0.000081 to 0.000064
+    2. batch size from 128 to 512
 """

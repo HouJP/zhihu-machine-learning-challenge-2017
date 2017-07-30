@@ -68,7 +68,7 @@ def train(config, argv):
     valid_index = [num - 1 for num in valid_index]
 
     # load labels
-    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[5000:]
+    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[50000:]
     # make prediction
     topk = config.getint('RANK', 'topk')
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
@@ -78,10 +78,10 @@ def train(config, argv):
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
     topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), 'offline')
-    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[5000:]
+    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[50000:]
 
     preds_ids = list()
-    for i in range(5000):
+    for i in range(50000):
         preds_ids.append([kv[0] for kv in sorted(zip(topk_label_id[i], valid_preds[i]), key=lambda x:x[1], reverse=True)])
 
     F_by_ids(preds_ids, valid_labels)
@@ -102,6 +102,7 @@ def train_online(config, argv):
     model = xgb.train(params,
                       dtrain,
                       params['num_round'])
+    LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)
 
     # make prediction
     topk = config.getint('RANK', 'topk')

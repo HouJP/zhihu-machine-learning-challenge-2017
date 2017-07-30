@@ -71,7 +71,8 @@ def train(config, argv):
     valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[50000:]
     # make prediction
     topk = config.getint('RANK', 'topk')
-    valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
+    valid_preds = model.predict(dvalid)
+    # valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
     valid_preds = [num for num in valid_preds]
     valid_preds = zip(*[iter(valid_preds)] * topk)
 
@@ -87,17 +88,15 @@ def train(config, argv):
     F_by_ids(topk_label_id, valid_labels)
     F_by_ids(preds_ids, valid_labels)
 
+    predict_online(model)
+
 
 def train_online(config, argv):
-    dtrain_fp = stand_path('%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', 'offline'))
-    group_train_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'group', 'offline')
+    rank_id = config.get('RANK', 'rank_id')
+    dtrain_fp = stand_path('%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', rank_id, 'offline'))
+    group_train_fp = '%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'group', rank_id, 'offline')
     dtrain = xgb.DMatrix(dtrain_fp)
     dtrain.set_group(DataUtil.load_vector(group_train_fp, 'int'))
-
-    dtest_fp = stand_path('%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', 'online'))
-    group_test_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'group', 'online')
-    dtest = xgb.DMatrix(dtest_fp)
-    dtest.set_group(DataUtil.load_vector(group_test_fp, 'int'))
 
     params = load_parameters(config)
     model = xgb.train(params,
@@ -105,9 +104,20 @@ def train_online(config, argv):
                       params['num_round'])
     LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)
 
+    predict_online(model)
+
+
+def predict_online(model):
+    run_id = config.get('RANK', 'rank_id')
+
+    dtest_fp = stand_path('%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', run_id, 'online'))
+    group_test_fp = '%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'group', run_id, 'online')
+    dtest = xgb.DMatrix(dtest_fp)
+    dtest.set_group(DataUtil.load_vector(group_test_fp, 'int'))
+
     # make prediction
     topk = config.getint('RANK', 'topk')
-    test_preds = model.predict(dtest, ntree_limit=model.best_ntree_limit)
+    test_preds = model.predict(dtest)
     test_preds = [num for num in test_preds]
     test_preds = zip(*[iter(test_preds)] * topk)
 
@@ -129,8 +139,7 @@ def train_online(config, argv):
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
     id2label = json.load(open(id2label_fp, 'r'))
 
-    run_id = 2
-    rank_submit_fp = '%s/rank_submit.online.%02d' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
+    rank_submit_fp = '%s/rank_submit.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
     rank_submit_f = open(rank_submit_fp, 'w')
     for line_id, p in enumerate(preds_ids):
         label_sorted = [id2label[str(n)] for n in p[:5]]
@@ -139,7 +148,7 @@ def train_online(config, argv):
             LogUtil.log('INFO', '%d lines prediction done' % line_id)
     rank_submit_f.close()
 
-    rank_submit_fp = '%s/rank_all.online.%02d' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
+    rank_submit_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
     rank_submit_f = open(rank_submit_fp, 'w')
     for p in test_preds:
         rank_submit_f.write('%s\n' % ','.join([str(num) for num in p]))

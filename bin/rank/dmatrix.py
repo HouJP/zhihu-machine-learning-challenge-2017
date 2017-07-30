@@ -13,16 +13,19 @@ from ..text_cnn.data_helpers import parse_feature_vec
 
 
 def generate(config, argv):
+    rank_id = config.get('RANK', 'rank_id')
     data_name = argv[0]
     # load rank features
     feature_names = config.get('RANK', 'rank_features').split()
     feature_files = [open('%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), fn, data_name), 'r') for fn in feature_names]
 
     # load rank labels
-    label_file = open('%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'labels', data_name), 'r')
+    label_file = open('%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'labels', rank_id, data_name), 'r')
 
-    dmatrix_file = open('%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', data_name), 'w')
-    group_file = open('%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'group', data_name), 'w')
+    dmatrix_file = open('%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', rank_id, data_name),
+                        'w')
+    group_file = open('%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'group', rank_id, data_name),
+                      'w')
 
     while True:
         features = list()

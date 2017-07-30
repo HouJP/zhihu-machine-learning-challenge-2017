@@ -59,6 +59,7 @@ def train(config, argv):
                       watchlist,
                       early_stopping_rounds=params['early_stop'],
                       verbose_eval=params['verbose_eval'])
+    LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)
 
     # load valid dataset index
     valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),

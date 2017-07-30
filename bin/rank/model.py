@@ -81,7 +81,7 @@ def train(config, argv):
     topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[50000:]
 
     preds_ids = list()
-    for i in range(50000):
+    for i in range(len(topk_label_id)):
         preds_ids.append([kv[0] for kv in sorted(zip(topk_label_id[i], valid_preds[i]), key=lambda x:x[1], reverse=True)])
 
     F_by_ids(preds_ids, valid_labels)

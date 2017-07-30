@@ -45,7 +45,7 @@ def vote(config, argv):
     topk_class_index_f.close()
     for f in vote_features_f:
         f.close()
-    analyze_vote()
+    analyze_vote(config, [])
 
 
 def analyze_vote(config, argv):

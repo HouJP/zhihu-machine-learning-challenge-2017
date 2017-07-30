@@ -114,7 +114,7 @@ def train_online(config, argv):
     topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')
 
     preds_ids = list()
-    for i in range(5000):
+    for i in range(len(topk_label_id)):
         preds_ids.append([kv[0] for kv in sorted(zip(topk_label_id[i], test_preds[i]), key=lambda x:x[1], reverse=True)])
 
     # load question ID for online dataset
@@ -130,7 +130,7 @@ def train_online(config, argv):
     rank_submit_fp = '%s/rank_submit.online.%02d' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
     rank_submit_f = open(rank_submit_fp, 'w')
     for line_id, p in enumerate(preds_ids):
-        label_sorted = [id2label[str(kv[0])] for kv in p[:5]]
+        label_sorted = [id2label[str(n)] for n in p[:5]]
         rank_submit_f.write("%s,%s\n" % (qid_on[line_id], ','.join(label_sorted)))
         if 0 == line_id % 10000:
             LogUtil.log('INFO', '%d lines prediction done' % line_id)

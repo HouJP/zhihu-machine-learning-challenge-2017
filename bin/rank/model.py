@@ -84,6 +84,7 @@ def train(config, argv):
     for i in range(len(topk_label_id)):
         preds_ids.append([kv[0] for kv in sorted(zip(topk_label_id[i], valid_preds[i]), key=lambda x:x[1], reverse=True)])
 
+    F_by_ids(topk_label_id, valid_labels)
     F_by_ids(preds_ids, valid_labels)
 
 

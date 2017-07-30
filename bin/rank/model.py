@@ -100,9 +100,7 @@ def train_online(config, argv):
     params = load_parameters(config)
     model = xgb.train(params,
                       dtrain,
-                      params['num_round'],
-                      early_stopping_rounds=params['early_stop'],
-                      verbose_eval=params['verbose_eval'])
+                      params['num_round'])
 
     # make prediction
     topk = config.getint('RANK', 'topk')

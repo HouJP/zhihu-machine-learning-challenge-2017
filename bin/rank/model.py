@@ -71,8 +71,8 @@ def train(config, argv):
     valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[50000:]
     # make prediction
     topk = config.getint('RANK', 'topk')
-    valid_preds = model.predict(dvalid)
-    # valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
+    # valid_preds = model.predict(dvalid)
+    valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
     valid_preds = [num for num in valid_preds]
     valid_preds = zip(*[iter(valid_preds)] * topk)
 
@@ -88,7 +88,7 @@ def train(config, argv):
     F_by_ids(topk_label_id, valid_labels)
     F_by_ids(preds_ids, valid_labels)
 
-    predict_online(model)
+    predict_online(model, model.best_ntree_limit)
 
 
 def train_online(config, argv):
@@ -104,10 +104,10 @@ def train_online(config, argv):
                       params['num_round'])
     LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)
 
-    predict_online(model)
+    predict_online(model, params['num_round'])
 
 
-def predict_online(model):
+def predict_online(model, best_ntree_limit):
     run_id = config.get('RANK', 'rank_id')
 
     dtest_fp = stand_path('%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', run_id, 'online'))
@@ -117,7 +117,7 @@ def predict_online(model):
 
     # make prediction
     topk = config.getint('RANK', 'topk')
-    test_preds = model.predict(dtest)
+    test_preds = model.predict(dtest, ntree_limit=best_ntree_limit)
     test_preds = [num for num in test_preds]
     test_preds = zip(*[iter(test_preds)] * topk)
 

@@ -6,6 +6,6 @@
 
 """
 v21 based on v18:
-    1. learning rate from 0.000081 to 0.000064
+    1. learning rate from 0.000081 to 0.0001007
     2. batch size from 128 to 512
 """

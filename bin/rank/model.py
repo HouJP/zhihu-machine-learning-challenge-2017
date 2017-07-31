@@ -30,8 +30,6 @@ def load_parameters(config):
     params['nthread'] = config.getint('XGB_PARAMS', 'nthread')
     params['scale_pos_weight'] = float(config.get('XGB_PARAMS', 'scale_pos_weight'))
     params['gamma'] = float(config.get('XGB_PARAMS', 'gamma'))
-    # params['alpha'] = float(config.get('XGB_PARAMS', 'alpha'))
-    # params['lambda'] = float(config.get('XGB_PARAMS', 'lambda'))
     params['verbose_eval'] = config.getint('XGB_PARAMS', 'verbose_eval')
     return params
 

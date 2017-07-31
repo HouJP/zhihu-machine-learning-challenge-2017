@@ -154,6 +154,15 @@ def predict_online(model, best_ntree_limit):
         rank_submit_f.write('%s\n' % ','.join([str(num) for num in p]))
     rank_submit_f.close()
 
+    rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
+    rank_submit_ave_f = open(rank_submit_ave_fp, 'w')
+    for line_id, p in enumerate(topk_label_id):
+        label_sorted = [id2label[str(n)] for n in p[:5]]
+        rank_submit_ave_f.write("%s,%s\n" % (qid_on[line_id], ','.join(label_sorted)))
+        if 0 == line_id % 10000:
+            LogUtil.log('INFO', '%d lines prediction done' % line_id)
+    rank_submit_ave_f.close()
+
 
 if __name__ == '__main__':
     config_fp = sys.argv[1]

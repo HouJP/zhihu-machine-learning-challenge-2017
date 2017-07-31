@@ -71,7 +71,7 @@ def train(config, argv):
     topk = config.getint('RANK', 'topk')
     # valid_preds = model.predict(dvalid)
     # valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
-    valid_preds = model.predict(dvalid, params['num_round'])
+    valid_preds = model.predict(dvalid, ntree_limit=params['num_round'])
     valid_preds = [num for num in valid_preds]
     valid_preds = zip(*[iter(valid_preds)] * topk)
 

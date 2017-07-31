@@ -30,8 +30,6 @@ def load_parameters(config):
     params['nthread'] = config.getint('XGB_PARAMS', 'nthread')
     params['scale_pos_weight'] = float(config.get('XGB_PARAMS', 'scale_pos_weight'))
     params['gamma'] = float(config.get('XGB_PARAMS', 'gamma'))
-    # params['alpha'] = float(config.get('XGB_PARAMS', 'alpha'))
-    # params['lambda'] = float(config.get('XGB_PARAMS', 'lambda'))
     params['verbose_eval'] = config.getint('XGB_PARAMS', 'verbose_eval')
     return params
 
@@ -72,7 +70,8 @@ def train(config, argv):
     # make prediction
     topk = config.getint('RANK', 'topk')
     # valid_preds = model.predict(dvalid)
-    valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
+    # valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
+    valid_preds = model.predict(dvalid, ntree_limit=params['num_round'])
     valid_preds = [num for num in valid_preds]
     valid_preds = zip(*[iter(valid_preds)] * topk)
 
@@ -88,7 +87,8 @@ def train(config, argv):
     F_by_ids(topk_label_id, valid_labels)
     F_by_ids(preds_ids, valid_labels)
 
-    predict_online(model, model.best_ntree_limit)
+    # predict_online(model, model.best_ntree_limit)
+    predict_online(model, params['num_round'])
 
 
 def train_online(config, argv):

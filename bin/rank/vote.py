@@ -22,7 +22,7 @@ def vote(config, argv):
     vote_features_f = [open('%s/%s.%s.csv' % (dataset_pt, fn, dataset_name), 'r') for fn in vote_features]
     topk_class_index_f = open('%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), dataset_name), 'w')
     LogUtil.log('INFO', 'vote_features=%s' % str(vote_features))
-    LogUtil.log('INFO', 'vote_features_f=%s' % str(vote_features_f))
+    LogUtil.log('INFO', 'topk_class_index_f=%s' % str(topk_class_index_f))
 
     while True:
         aggregator = [0.] * class_num

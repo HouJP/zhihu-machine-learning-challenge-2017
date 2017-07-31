@@ -13,6 +13,7 @@ from ..text_cnn.data_helpers import load_labels_from_file
 
 def generate(config, argv):
     data_name = 'offline'
+    rank_id = config.get('RANK', 'rank_id')
     # load valid dataset index
     valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
                                               config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
@@ -23,11 +24,13 @@ def generate(config, argv):
     index_pt = config.get('DIRECTORY', 'index_pt')
     topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), data_name)
     topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')
+    LogUtil.log('INFO', 'topk_class_index_fp=%s' % topk_class_index_fp)
 
     # load labels
     feature_name = 'labels'
     LogUtil.log('INFO', 'feature_name=%s' % feature_name)
-    rank_features_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
+    rank_features_fp = '%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, rank_id, data_name)
+    LogUtil.log('INFO', 'rank_features_fp=%s' % rank_features_fp)
     rank_features_f = open(rank_features_fp, 'w')
     features = load_labels_from_file(config, data_name, valid_index)
 

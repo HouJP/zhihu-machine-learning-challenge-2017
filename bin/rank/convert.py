@@ -98,7 +98,7 @@ if __name__ == '__main__':
     #     'vote_fs_rcnn_v4_248.offline.csv'
     # ]
 
-    inputs_pre = '/home/xinyu/zhihu_preds'
+    inputs_pre = '/home/xinyu/zhihu_preds/'
     inputs = [
         'test.cnn-v52.208.preds',
         'test.cnn-v58.300.preds',

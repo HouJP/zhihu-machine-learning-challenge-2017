@@ -8,6 +8,7 @@
 import sys
 import ConfigParser
 from ..utils import DataUtil, LogUtil
+from os.path import isfile
 from ..text_cnn.data_helpers import load_features_from_file
 
 
@@ -29,8 +30,12 @@ def generate(config, argv):
     for feature_name in feature_names:
         LogUtil.log('INFO', 'feature_name=%s' % feature_name)
         rank_features_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
-        rank_features_f = open(rank_features_fp, 'w')
         LogUtil.log('INFO', 'rank_features_fp=%s' % rank_features_fp)
+        has_rank_features = isfile('%s.npz' % rank_features_fp)
+        if has_rank_features:
+            LogUtil.log('INFO', 'has rank features, jump')
+            continue
+        rank_features_f = open(rank_features_fp, 'w')
         if 'offline' == data_name and 0 == feature_name.count('vote_'):
             LogUtil.log('INFO', 'load_features_from_file')
             features = load_features_from_file(config, feature_name, data_name, valid_index)

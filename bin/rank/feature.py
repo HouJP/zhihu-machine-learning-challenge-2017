@@ -31,7 +31,7 @@ def generate(config, argv):
         LogUtil.log('INFO', 'feature_name=%s' % feature_name)
         rank_features_fp = '%s/rank_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name)
         LogUtil.log('INFO', 'rank_features_fp=%s' % rank_features_fp)
-        has_rank_features = isfile('%s.npz' % rank_features_fp)
+        has_rank_features = isfile('%s' % rank_features_fp)
         if has_rank_features:
             LogUtil.log('INFO', 'has rank features, jump')
             continue

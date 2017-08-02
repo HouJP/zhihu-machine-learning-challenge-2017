@@ -102,7 +102,7 @@ def parse_feature_vec(line):
 
 def parse_feature_sparse_vec(line, length):
     vec = [0.] * length
-    if 0 == line.strip():
+    if 0 == len(line.strip()):
         return vec
     else:
         for kv in re.split(' |,', line.strip()):

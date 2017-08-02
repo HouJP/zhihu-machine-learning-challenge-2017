@@ -59,7 +59,7 @@ def generate(config, argv):
                       "minkowski",
                       "braycurtis"]
 
-    btm_dis_feature_fn = ['fs_btm_dis_%s' % dis_func_name for dis_func_name in dis_func_names]
+    btm_dis_feature_fn = ['vote_fs_btm_dis_%s' % dis_func_name for dis_func_name in dis_func_names]
     btm_dis_feature_f = [open('%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'),
                                                 fn,
                                                 data_name), 'w') for fn in btm_dis_feature_fn]

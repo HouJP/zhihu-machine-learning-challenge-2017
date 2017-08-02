@@ -66,7 +66,10 @@ def generate(config, argv):
             vec = [0.] * 1999
             for topic_id in range(1999):
                 topic_vec = topic_btm_vec[topic_id]
-                vec[topic_id] = eval(dis_func_names[dis_id])(doc_vec, topic_vec)
+                if 'minkowski' == dis_func_names[dis_id]:
+                    vec[topic_id] = eval(dis_func_names[dis_id])(doc_vec, topic_vec, 3)
+                else:
+                    vec[topic_id] = eval(dis_func_names[dis_id])(doc_vec, topic_vec)
             btm_dis_feature_f[dis_id].write('%s\n' % ','.join([str(num) for num in vec]))
 
     for f in btm_dis_feature_f:

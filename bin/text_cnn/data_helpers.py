@@ -82,8 +82,23 @@ def parse_feature_vec(line):
     return vec
 
 
+def parse_feature_sparse_vec(line, length):
+    vec = [0.] * length
+    for kv in re.split(' |,', line.strip('\n')):
+        fid, fv = kv.split(':')
+        vec[int(fid)] = 0. if math.isnan(float(fv)) else float(fv)
+    return vec
+
+
 def load_feature_vec(file_path):
-    return [parse_feature_vec(line) for line in open(file_path).readlines()]
+    if file_path.endswith('.smat'):
+        LogUtil.log('INFO', 'load sparse feature file %s' % file_path)
+        f = open(file_path, 'r')
+        row_num, col_num = re.split(' |,', f.readline().strip('\n'))
+        return [parse_feature_sparse_vec(line, int(col_num)) for line in f.readlines()]
+    else:
+        LogUtil.log('INFO', 'load dense feature file %s' % file_path)
+        return [parse_feature_vec(line) for line in open(file_path).readlines()]
 
 
 def parse_lid_vec(line, class_num):

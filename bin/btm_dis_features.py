@@ -12,6 +12,7 @@ import json
 import sys
 import ConfigParser
 from data_utils import load_topic_info
+from text_cnn.data_helpers import parse_feature_vec
 
 
 def load_topic_btm_vec(config):
@@ -29,7 +30,7 @@ def load_topic_btm_vec(config):
 
     line_id = 0
     for line in btm_topic_vec_f:
-        vec = np.nan_to_num(re.split(' |,', line.strip()))
+        vec = np.nan_to_num(parse_feature_vec(line))
         topic_btm_vecs[int(label2id[tid_list[line_id]])] = vec
         line_id += 1
 
@@ -60,7 +61,7 @@ def generate(config, argv):
                                                 data_name), 'w') for fn in btm_dis_feature_fn]
 
     for line in btm_vec_f:
-        doc_vec = np.nan_to_num(re.split(' |,', line.strip()))
+        doc_vec = np.nan_to_num(parse_feature_vec(line))
         for dis_id in range(len(dis_func_names)):
             vec = [0.] * 1999
             for topic_id in range(1999):

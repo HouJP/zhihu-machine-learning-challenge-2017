@@ -175,9 +175,9 @@ if __name__ == '__main__':
 
     # assert len(inputs) == len(outputs)
 
-    for kv in inputs_outputs:
-        inputs_i = kv[0]
-        outputs_i = kv[1]
+    for key in inputs_outputs:
+        inputs_i = key
+        outputs_i = inputs_outputs[key]
         if 0 < inputs_i.count('test'):
             assert 0 < outputs_i.count('online')
         if 0 < inputs_i.count('val'):

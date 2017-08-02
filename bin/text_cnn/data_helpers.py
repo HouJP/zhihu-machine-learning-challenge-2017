@@ -10,6 +10,7 @@ import math
 import random
 import re
 from bin.utils import LogUtil
+from os.path import isfile
 
 
 def load_embedding(file_path):
@@ -108,9 +109,9 @@ def parse_feature_sparse_vec(line, length):
 
 
 def load_feature_vec(file_path):
-    if file_path.endswith('.smat'):
+    if isfile(file_path + '.smat'):
         LogUtil.log('INFO', 'load sparse feature file %s' % file_path)
-        f = open(file_path, 'r')
+        f = open(file_path + '.smat', 'r')
         row_num, col_num = re.split(' |,', f.readline().strip('\n'))
         return [parse_feature_sparse_vec(line, int(col_num)) for line in f.readlines()]
     else:
@@ -176,18 +177,18 @@ def load_feature_vec_part(file_path, inds_copy, inds_map):
 
     index_f = 0
     index_inds = 0
-    f = open(file_path, 'r')
 
-    is_smat = False
+    is_smat = isfile('%s.smat' % file_path)
 
-    if file_path.endswith('.smat'):
-        is_smat = True
+    if is_smat:
         LogUtil.log('INFO', 'load sparse feature file %s' % file_path)
+        f = open('%s.smat' % file_path, 'r')
         row_num, col_num = re.split(' |,', f.readline().strip('\n'))
         row_num = int(row_num)
         col_num = int(col_num)
     else:
         LogUtil.log('INFO', 'load dense feature file %s' % file_path)
+        f = open(file_path, 'r')
         row_num = col_num = -1
 
     for line in f:

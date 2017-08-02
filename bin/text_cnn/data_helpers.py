@@ -139,7 +139,9 @@ def load_doc_vec_part(file_path, emb_index, vec_length, reverse, inds_copy, inds
 
     index_f = 0
     index_inds = 0
+
     f = open(file_path, 'r')
+
     for line in f:
         if len(inds_copy) <= index_inds:
             break
@@ -158,11 +160,24 @@ def load_feature_vec_part(file_path, inds_copy, inds_map):
     index_f = 0
     index_inds = 0
     f = open(file_path, 'r')
+
+    is_smat = False
+
+    if file_path.endswith('.smat'):
+        is_smat = True
+        LogUtil.log('INFO', 'load sparse feature file %s' % file_path)
+        row_num, col_num = re.split(' |,', f.readline().strip('\n'))
+        row_num = int(row_num)
+        col_num = int(col_num)
+    else:
+        LogUtil.log('INFO', 'load dense feature file %s' % file_path)
+        row_num = col_num = -1
+
     for line in f:
         if len(inds_copy) <= index_inds:
             break
         if index_f == inds_copy[index_inds]:
-            vecs[inds_map[index_inds]] = parse_feature_vec(line)
+            vecs[inds_map[index_inds]] = parse_feature_vec(line) if not is_smat else parse_feature_sparse_vec(line, col_num)
             index_inds += 1
         index_f += 1
     f.close()

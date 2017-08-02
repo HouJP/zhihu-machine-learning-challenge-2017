@@ -70,8 +70,8 @@ def train(config, argv):
     # make prediction
     topk = config.getint('RANK', 'topk')
     # valid_preds = model.predict(dvalid)
-    # valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
-    valid_preds = model.predict(dvalid, ntree_limit=params['num_round'])
+    valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
+    # valid_preds = model.predict(dvalid, ntree_limit=params['num_round'])
     valid_preds = [num for num in valid_preds]
     valid_preds = zip(*[iter(valid_preds)] * topk)
 
@@ -87,8 +87,8 @@ def train(config, argv):
     F_by_ids(topk_label_id, valid_labels)
     F_by_ids(preds_ids, valid_labels)
 
-    # predict_online(model, model.best_ntree_limit)
-    predict_online(model, params['num_round'])
+    predict_online(model, model.best_ntree_limit)
+    # predict_online(model, params['num_round'])
 
 
 def train_online(config, argv):
@@ -153,6 +153,15 @@ def predict_online(model, best_ntree_limit):
     for p in test_preds:
         rank_submit_f.write('%s\n' % ','.join([str(num) for num in p]))
     rank_submit_f.close()
+
+    rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
+    rank_submit_ave_f = open(rank_submit_ave_fp, 'w')
+    for line_id, p in enumerate(topk_label_id):
+        label_sorted = [id2label[str(n)] for n in p[:5]]
+        rank_submit_ave_f.write("%s,%s\n" % (qid_on[line_id], ','.join(label_sorted)))
+        if 0 == line_id % 10000:
+            LogUtil.log('INFO', '%d lines prediction done' % line_id)
+    rank_submit_ave_f.close()
 
 
 if __name__ == '__main__':

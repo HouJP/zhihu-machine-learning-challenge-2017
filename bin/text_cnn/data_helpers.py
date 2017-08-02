@@ -102,10 +102,13 @@ def parse_feature_vec(line):
 
 def parse_feature_sparse_vec(line, length):
     vec = [0.] * length
-    for kv in re.split(' |,', line.strip('\n')):
-        fid, fv = kv.split(':')
-        vec[int(fid)] = 0. if math.isnan(float(fv)) else float(fv)
-    return vec
+    if 0 == line.strip():
+        return vec
+    else:
+        for kv in re.split(' |,', line.strip()):
+            fid, fv = kv.split(':')
+            vec[int(fid)] = 0. if math.isnan(float(fv)) else float(fv)
+        return vec
 
 
 def load_feature_vec(file_path):

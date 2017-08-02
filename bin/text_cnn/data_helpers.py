@@ -32,6 +32,23 @@ def load_embedding(file_path):
 
     return emb_index, emb_matrix
 
+def load_embedding_with_idx(file_path, emb_index):
+    emb_f = open(file_path, 'r')
+
+    shape = emb_f.readline().strip()
+    emb_num, emb_size = [int(x) for x in shape.split()]
+    LogUtil.log('INFO', 'embedding_shape=(%d, %d)' % (emb_num, emb_size))
+
+    emb_matrix = np.zeros([emb_num+2, emb_size])
+
+    for line in emb_f:
+        subs = line.strip().split()
+        word = subs[0]
+        vec = subs[1:]
+        if word in emb_index:
+            emb_matrix[emb_index[word]] = np.asarray(vec)
+
+    return emb_matrix
 
 def parse_dataset_line(line, emb_index, class_num, title_length, content_length, reverse):
     line = line.strip('\n')

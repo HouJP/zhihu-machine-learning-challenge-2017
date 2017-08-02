@@ -98,55 +98,90 @@ if __name__ == '__main__':
     #     'vote_fs_rcnn_v4_248.offline.csv'
     # ]
 
-    inputs_pre = '/home/xinyu/zhihu_preds/'
-    inputs = [
-        'test.cnn-v52.208.preds',
-        'test.cnn-v58.300.preds',
-        'test.cnn-v58.340.preds',
-        'test.cnn-v60.180.preds',
-        'test.cnn-v60.240.preds',
-        'test.rcnn-v4.216.preds',
-        'test.rcnn-v4.264.preds',
-        'test.rcnn-v4.300.preds',
-        'val.cnn-v52.208.preds',
-        'val.cnn-v58.300.preds',
-        'val.cnn-v58.340.preds',
-        'val.cnn-v60.180.preds',
-        'val.cnn-v60.240.preds',
-        'val.rcnn-v4.216.preds',
-        'val.rcnn-v4.264.preds',
-        'val.rcnn-v4.300.preds'
-    ]
+    # inputs_pre = '/home/xinyu/zhihu_preds/'
+    # inputs = [
+    #     'test.cnn-v52.208.preds',
+    #     'test.cnn-v58.300.preds',
+    #     'test.cnn-v58.340.preds',
+    #     'test.cnn-v60.180.preds',
+    #     'test.cnn-v60.240.preds',
+    #     'test.rcnn-v4.216.preds',
+    #     'test.rcnn-v4.264.preds',
+    #     'test.rcnn-v4.300.preds',
+    #     'val.cnn-v52.208.preds',
+    #     'val.cnn-v58.300.preds',
+    #     'val.cnn-v58.340.preds',
+    #     'val.cnn-v60.180.preds',
+    #     'val.cnn-v60.240.preds',
+    #     'val.rcnn-v4.216.preds',
+    #     'val.rcnn-v4.264.preds',
+    #     'val.rcnn-v4.300.preds'
+    # ]
+    #
+    # outputs_pre = '/mnt/disk2/xinyu/data/dataset/'
+    # outputs = [
+    #     'vote_fs_cnn_v52_208.online.csv',
+    #     'vote_fs_cnn_v58_300.online.csv',
+    #     'vote_fs_cnn_v58_340.online.csv',
+    #     'vote_fs_cnn_v60_180.online.csv',
+    #     'vote_fs_cnn_v60_240.online.csv',
+    #     'vote_fs_rcnn_v4_216.online.csv',
+    #     'vote_fs_rcnn_v4_264.online.csv',
+    #     'vote_fs_rcnn_v4_300.online.csv',
+    #     'vote_fs_cnn_v52_208.offline.csv',
+    #     'vote_fs_cnn_v58_300.offline.csv',
+    #     'vote_fs_cnn_v58_340.offline.csv',
+    #     'vote_fs_cnn_v60_180.offline.csv',
+    #     'vote_fs_cnn_v60_240.offline.csv',
+    #     'vote_fs_rcnn_v4_216.offline.csv',
+    #     'vote_fs_rcnn_v4_264.offline.csv',
+    #     'vote_fs_rcnn_v4_300.offline.csv'
+    # ]
 
-    outputs_pre = '/mnt/disk2/xinyu/data/dataset/'
-    outputs = [
-        'vote_fs_cnn_v52_208.online.csv',
-        'vote_fs_cnn_v58_300.online.csv',
-        'vote_fs_cnn_v58_340.online.csv',
-        'vote_fs_cnn_v60_180.online.csv',
-        'vote_fs_cnn_v60_240.online.csv',
-        'vote_fs_rcnn_v4_216.online.csv',
-        'vote_fs_rcnn_v4_264.online.csv',
-        'vote_fs_rcnn_v4_300.online.csv',
-        'vote_fs_cnn_v52_208.offline.csv',
-        'vote_fs_cnn_v58_300.offline.csv',
-        'vote_fs_cnn_v58_340.offline.csv',
-        'vote_fs_cnn_v60_180.offline.csv',
-        'vote_fs_cnn_v60_240.offline.csv',
-        'vote_fs_rcnn_v4_216.offline.csv',
-        'vote_fs_rcnn_v4_264.offline.csv',
-        'vote_fs_rcnn_v4_300.offline.csv'
-    ]
+    inputs_outputs = {
+        '/home/xinyu/zhihu_preds/pack_niu/test.cnn-v61.300.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v61_300.online.csv',
+        '/home/xinyu/zhihu_preds/pack_niu/test.cnn-v61.328.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v61_328.online.csv',
+        '/home/xinyu/zhihu_preds/pack_niu/test.lstm-v1.244.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_lstm_v1_244.online.csv',
+        '/home/xinyu/zhihu_preds/pack_niu/test.lstm-v1.284.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_lstm_v1_284.online.csv',
+        '/home/xinyu/zhihu_preds/pack_niu/val.cnn-v61.300.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v61_300.offline.csv',
+        '/home/xinyu/zhihu_preds/pack_niu/val.cnn-v61.328.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v61_328.offline.csv',
+        '/home/xinyu/zhihu_preds/pack_niu/val.lstm-v1.244.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_lstm_v1_244.offline.csv',
+        '/home/xinyu/zhihu_preds/pack_niu/val.lstm-v1.284.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_lstm_v1_284.offline.csv',
+        '/home/xinyu/zhihu_preds/pack1/test.cnn-v64.272.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v64_272.online.csv',
+        '/home/xinyu/zhihu_preds/pack1/test.cnn-v64.304.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v64_304.online.csv',
+        '/home/xinyu/zhihu_preds/pack1/test.cnn-v65.304.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v65_304.online.csv',
+        '/home/xinyu/zhihu_preds/pack1/test.cnn-v65.336.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v65_336.online.csv',
+        '/home/xinyu/zhihu_preds/pack1/val.cnn-v64.272.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v64_272.offline.csv',
+        '/home/xinyu/zhihu_preds/pack1/val.cnn-v64.304.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v64_304.offline.csv',
+        '/home/xinyu/zhihu_preds/pack1/val.cnn-v65.304.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v65_304.offline.csv',
+        '/home/xinyu/zhihu_preds/pack1/val.cnn-v65.336.preds':
+            '/mnt/disk2/xinyu/data/dataset/vote_fs_cnn_v65_336.offline.csv',
+    }
 
-    assert len(inputs) == len(outputs)
+    # assert len(inputs) == len(outputs)
 
-    for i in range(len(inputs)):
-        if 0 < inputs[i].count('test'):
-            assert 0 < outputs[i].count('online')
-        if 0 < inputs[i].count('val'):
-            assert 0 < outputs[i].count('offline')
-        print inputs[i]
-        print outputs[i]
-        inp = inputs_pre + inputs[i]
-        out = outputs_pre + outputs[i]
-        convert(inp, out)
+    for kv in inputs_outputs:
+        inputs_i = kv[0]
+        outputs_i = kv[1]
+        if 0 < inputs_i.count('test'):
+            assert 0 < outputs_i.count('online')
+        if 0 < inputs_i.count('val'):
+            assert 0 < outputs_i.count('offline')
+        print inputs_i
+        print outputs_i
+        convert(inputs_i, outputs_i)

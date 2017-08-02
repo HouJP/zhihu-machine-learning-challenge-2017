@@ -17,3 +17,6 @@ btm
 # latex
 .texpadtmp/
 *.pdf
+
+# python
+*.pyc

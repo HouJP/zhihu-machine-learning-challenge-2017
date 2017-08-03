@@ -224,6 +224,24 @@ def load_lid_part(file_path, class_num, inds_copy, inds_map):
     return vecs
 
 
+def load_raw_line_part(file_path, inds_copy, inds_map):
+    vecs = [0] * len(inds_copy)
+
+    index_f = 0
+    index_inds = 0
+    f = open(file_path, 'r')
+    for line in f:
+        if len(inds_copy) <= index_inds:
+            break
+        if index_f == inds_copy[index_inds]:
+            vecs[inds_map[index_inds]] = line
+            index_inds += 1
+        index_f += 1
+    f.close()
+
+    return vecs
+
+
 def load_features_from_file(config, feature_name, data_name, inds):
     # make a copy of index
     inds_sorted = sorted(enumerate(inds), key=lambda kv: kv[1])
@@ -257,6 +275,19 @@ def load_labels_from_file(config, data_name, inds):
     LogUtil.log('INFO', 'load label id vector done')
 
     return sub_lid_vecs
+
+
+def load_raw_line_from_file(config, file_path, inds):
+    # make a copy of index
+    inds_sorted = sorted(enumerate(inds), key=lambda kv: kv[1])
+    inds_copy = [kv[1] for kv in inds_sorted]
+    inds_map = [kv[0] for kv in inds_sorted]
+
+    sub_lines = load_raw_line_part(file_path, inds_copy, inds_map)
+
+    LogUtil.log('INFO', 'load raw line done')
+
+    return sub_lines
 
 
 def load_dataset_from_file_loop(config, data_name, word_emb_index, char_emb_index, inds, loop=True):

@@ -22,7 +22,7 @@ def generate_featwheel_feature_from_vote(config, argv):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
-    vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name)
     vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
 
     # load model features

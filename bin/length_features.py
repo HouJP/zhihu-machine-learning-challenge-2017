@@ -37,7 +37,7 @@ def generate(config, argv):
     feature_file = open(feature_file_path, 'w')
 
     feature_file.write('%d %d\n' % (len(source_data), 4))
-    for line in feature_file:
+    for line in source_data:
         qid, tc, tw, dc, dw = parse_question_set(line)
         feature = list()
         feature.append(len(tc))

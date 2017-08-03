@@ -7,7 +7,7 @@
 
 from text_cnn.data_helpers import load_raw_line_from_file
 from data_utils import parse_question_set
-from utils import DataUtil
+from utils import DataUtil, LogUtil
 from featwheel.feature import Feature
 import sys
 import ConfigParser
@@ -15,6 +15,7 @@ import ConfigParser
 
 def generate(config, argv):
     data_name = argv[0]
+    LogUtil.log('INFO', 'data_name=%s' % data_name)
 
     # load data set
     if 'offline' == data_name:
@@ -32,7 +33,7 @@ def generate(config, argv):
     else:
         source_data = None
 
-    feature_file_path = '%s/instance_fs_length.%s.smat'
+    feature_file_path = '%s/instance_fs_length.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), data_name)
     feature_file = open(feature_file_path, 'w')
 
     feature_file.write('%d %d\n' % (len(source_data, 4)))

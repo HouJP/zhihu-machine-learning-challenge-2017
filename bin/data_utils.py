@@ -10,6 +10,17 @@ import sys
 import json
 
 
+def parse_question_set(line):
+    subs = line.strip('\n').split('\t')
+    qid = subs[0]
+    tc = subs[1].split(',')
+    tw = subs[2].split(',')
+    dc = subs[3].split(',')
+    dw = subs[4].split(',')
+
+    return qid, tc, tw, dc, dw
+
+
 def load_question_set(fp):
     """
     load `question_train_set.txt` and `question_eval_set.txt`
@@ -33,6 +44,18 @@ def load_question_set(fp):
         index += 1
     f.close()
     return qid_list, tc_list, tw_list, dc_list, dw_list
+
+
+def parse_topic_info(line):
+    subs = line.strip('\n').split('\t')
+    tid = subs[0]
+    father_tid = subs[1].split(',')
+    tc = subs[2].split(',')
+    tw = subs[3].split(',')
+    dc = subs[4].split(',')
+    dw = subs[5].split(',')
+
+    return tid, father_tid, tc, tw, dc, dw
 
 
 def load_topic_info(fp):

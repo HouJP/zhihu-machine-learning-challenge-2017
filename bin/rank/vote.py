@@ -19,16 +19,16 @@ def vote(config, argv):
     dataset_pt = config.get('DIRECTORY', 'dataset_pt')
     index_pt = config.get('DIRECTORY', 'index_pt')
     class_num = config.getint('DATA_ATTRIBUTE', 'class_num')
-    topk = config.getint('RANK', 'topk')
+    vote_k = config.getint('RANK', 'vote_k')
 
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_feature_files = [open('%s/%s.%s.csv' % (dataset_pt, fn, data_name), 'r') for fn in vote_feature_names]
 
-    topk_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
-    topk_label_file = open('%s/topk_label_%s.%s.index' % (index_pt, topk_label_file_name, data_name), 'w')
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k_label_file = open('%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name), 'w')
 
     LogUtil.log('INFO', 'vote_feature_names=%s' % str(vote_feature_names))
-    LogUtil.log('INFO', 'topk_label_file_name=%s' % str('%s/topk_label_%s.%s.index' % (index_pt, topk_label_file_name, data_name)))
+    LogUtil.log('INFO', 'vote_%d_label_file_name=%s' % (vote_k, str('%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name))))
 
     while True:
         aggregator = [0.] * class_num
@@ -44,11 +44,10 @@ def vote(config, argv):
         if eof:
             break
 
-        #print aggregator
-        topk_ids = [kv[0] for kv in sorted(enumerate(aggregator), key=lambda x: x[1], reverse=True)[:topk]]
-        topk_label_file.write('%s\n' % ' '.join([str(n) for n in topk_ids]))
+        vote_k_ids = [kv[0] for kv in sorted(enumerate(aggregator), key=lambda x: x[1], reverse=True)[:vote_k]]
+        vote_k_label_file.write('%s\n' % ' '.join([str(n) for n in vote_k_ids]))
 
-    topk_label_file.close()
+    vote_k_label_file.close()
     for f in vote_feature_files:
         f.close()
     analyze_vote(config, [])
@@ -65,27 +64,28 @@ def analyze_vote(config, argv):
     valid_label_id = load_labels_from_file(config, 'offline', valid_index_off)
 
     # load topk ids
+    vote_k = config.getint('RANK', 'vote_k')
     index_pt = config.get('DIRECTORY', 'index_pt')
     vote_feature_names = config.get('RANK', 'vote_features').split()
-    topk_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
-    topk_label_file_path = '%s/topk_label_%s.%s.index' % (index_pt, topk_label_file_name, 'offline')
-    topk_label = DataUtil.load_matrix(topk_label_file_path, 'int')
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
 
     total_labels = 0
     right_labels = 0
 
-    topk = config.getint('RANK', 'topk')
+    vote_k = config.getint('RANK', 'vote_k')
     class_num = config.getint('DATA_ATTRIBUTE', 'class_num')
-    assert len(valid_label_id) == len(topk_label)
-    for line_id in range(len(topk_label)):
+    assert len(valid_label_id) == len(vote_k_label)
+    for line_id in range(len(vote_k_label)):
         for class_id in range(class_num):
             if 1 == valid_label_id[line_id][class_id]:
                 total_labels += 1
-        for lid in topk_label[line_id]:
+        for lid in vote_k_label[line_id]:
             if 1 == valid_label_id[line_id][lid]:
                 right_labels += 1
 
-    LogUtil.log('INFO', 'topk=%d, recall=%s%%' % (topk, str(100. * right_labels / total_labels)))
+    LogUtil.log('INFO', 'vote_k=%d, recall=%s%%' % (vote_k, str(100. * right_labels / total_labels)))
 
 
 if __name__ == '__main__':

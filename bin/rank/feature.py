@@ -14,7 +14,7 @@ from ..text_cnn.data_helpers import load_features_from_file
 from ..featwheel.feature import Feature
 
 
-def generate_featwheel_feature(config, argv):
+def generate_featwheel_feature_from_vote(config, argv):
     data_name = argv[0]
 
     topk = config.getint('RANK', 'topk')
@@ -37,12 +37,13 @@ def generate_featwheel_feature(config, argv):
         if has_featwheel_features:
             LogUtil.log('INFO', 'has featwheel features, JUMP')
             continue
-        featwheel_feature_file = open(featwheel_feature_file_path, 'w')
-        features = DataUtil.load_matrix('%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name), 'float')
 
+        features = DataUtil.load_matrix('%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name), 'float')
+        assert len(topk_label) == len(features)
+
+        featwheel_feature_file = open(featwheel_feature_file_path, 'w')
         featwheel_feature_file.write('%d %d\n' % (len(features) * topk, 1))
 
-        assert len(topk_label) == len(features)
         for line_id in range(len(topk_label)):
             rank_features = [str(features[line_id][lid]) for lid in topk_label[line_id]]
             for lid in topk_label[line_id]:

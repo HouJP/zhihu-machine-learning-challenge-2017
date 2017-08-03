@@ -36,7 +36,7 @@ def generate(config, argv):
     feature_file_path = '%s/instance_fs_length.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), data_name)
     feature_file = open(feature_file_path, 'w')
 
-    feature_file.write('%d %d\n' % (len(source_data, 4)))
+    feature_file.write('%d %d\n' % (len(source_data), 4))
     for line in feature_file:
         qid, tc, tw, dc, dw = parse_question_set(line)
         feature = list()

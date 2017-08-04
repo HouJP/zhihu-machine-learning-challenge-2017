@@ -183,15 +183,15 @@ class TitleContentCNN(object):
 
         # add word share features
         fs_idf_100_pl_input = Input(shape=(fs_idf_100_pl_length,), dtype='float32', name="fs_idf_100_pl_input")
-        preds_prior = Activation("softmax")(Scale()(fs_idf_100_pl_input))
+        preds_prior = Activation("sigmoid")(Scale()(fs_idf_100_pl_input))
 
         # Full connection
         title_content_features = Dense(3600, activation='relu', name='fs_embedding')(title_content_features)
         title_content_features = Dropout(0.5, name='fs_embedding_dropout')(title_content_features)
 
         # Prediction
-        preds_lh = Dense(class_num)(title_content_features)
-        preds = Activation('sigmoid', name='prediction')(multiply([preds_prior, preds_lh]))
+        preds_lh = Dense(class_num, activation='sigmoid')(title_content_features)
+        preds = Multiply(name='prediction')([preds_prior, preds_lh])
 
         self._model = Model([title_word_input,
                              cont_word_input,

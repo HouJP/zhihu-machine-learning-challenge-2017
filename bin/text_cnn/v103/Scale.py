@@ -8,9 +8,9 @@ import numpy as np
 class Scale(Layer):
 
     def __init__(self, 
-                 kernel_initializer='glorot_uniform',
+                 kernel_initializer=initializers.Constant(1.0),
                  kernel_regularizer=None,
-                 kernel_constraint=constraints.non_neg(),
+                 kernel_constraint=None,
                  bias_initializer='zeros',
                  bias_regularizer=None,
                  bias_constraint=None,

@@ -78,7 +78,7 @@ def generate_featwheel_feature_from_instance(config, argv):
             LogUtil.log('INFO', 'has featwheel features, JUMP')
             continue
 
-        features = Feature.load_smat('%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name))
+        features = Feature.load_smat('%s/%s.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name))
         assert len(vote_k_label) == (features.shape)[0]
 
         indexs = list(itertools.chain(*[[i] * vote_k for i in range((features.shape)[0])]))

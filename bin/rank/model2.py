@@ -61,7 +61,7 @@ def train(config, argv):
                                           'int')
 
 
-    dtrain = xgb.DMatrix(offline_features, labels=offline_labels)
+    dtrain = xgb.DMatrix(offline_features, label=offline_labels)
     dtrain.set_group([rank_k] * (offline_features.shape[0] / rank_k))
 
     # dvalid_fp = stand_path('%s/%s_valid.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))

@@ -7,6 +7,7 @@
 
 import xgboost as xgb
 import sys
+import hashlib
 import ConfigParser
 import json
 from ..utils import DataUtil, LogUtil
@@ -44,9 +45,10 @@ def train(config, argv):
     # load parameters
     vote_k = config.getint('RANK', 'vote_k')
     rank_k = config.getint('RANK', 'rank_k')
-    feature_names = config.get('RANK', 'model_features').split() + \
-                    config.get('RANK', 'instance_features').split() + \
-                    config.get('RANK', 'topic_features').split()
+    feature_names = config.get('RANK', 'model_features').split()
+    # feature_names = config.get('RANK', 'model_features').split() + \
+    #                 config.get('RANK', 'instance_features').split() + \
+    #                 config.get('RANK', 'topic_features').split()
     feature_names = ['featwheel_vote_%d_%s' % (vote_k, fn) for fn in feature_names]
 
     # load feature matrix
@@ -99,19 +101,24 @@ def train(config, argv):
     valid_index = [num - 1 for num in valid_index]
 
     # load labels
-    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[50000:]
+    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[train_instance_num:]
     # make prediction
     topk = config.getint('RANK', 'topk')
     # valid_preds = model.predict(dvalid)
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
     # valid_preds = model.predict(dvalid, ntree_limit=params['num_round'])
     valid_preds = [num for num in valid_preds]
-    valid_preds = zip(*[iter(valid_preds)] * topk)
+    valid_preds = zip(*[iter(valid_preds)] * rank_k)
 
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
-    topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), 'offline')
-    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[50000:]
+    dataset_pt = config.get('DIRECTORY', 'dataset_pt')
+    vote_k = config.getint('RANK', 'vote_k')
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_feature_files = [open('%s/%s.%s.csv' % (dataset_pt, fn, 'offline'), 'r') for fn in vote_feature_names]
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    topk_class_index_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[train_instance_num:]
 
     preds_ids = list()
     for i in range(len(topk_label_id)):

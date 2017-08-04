@@ -147,7 +147,7 @@ class Feature(object):
             indptr.append(len(data))
         f.close()
         features = csr_matrix((data, indice, indptr), shape=(row_num, col_num), dtype=float)
-        LogUtil.log("INFO", "load smat feature file done (%s)" % ft_fp)
+        LogUtil.log("INFO", "load smat feature file done, shape=(%d, %d) (%s)" % (row_num, col_num, ft_fp))
         return features
 
     @staticmethod

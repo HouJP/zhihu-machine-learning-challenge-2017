@@ -15,7 +15,8 @@ import re
 from ..utils import LogUtil, DataUtil
 from feature import Feature
 from model import Model
-from ..text_cnn.data_helpers import load_raw_line_from_file
+from ..text_cnn.data_helpers import load_labels_from_file
+from ..evaluation import F_by_ids
 
 
 class Runner(object):
@@ -172,18 +173,35 @@ class SingleExec(Runner):
                                         offline_valid_labels)
         model.save(model_fp)
 
+        offline_valid_preds = zip(*[iter(offline_valid_preds)] * rank_k)
+
+        # load labels
+        valid_index_fp = '%s/%s.offline.index' % (self.config.get('DIRECTORY', 'index_pt'),
+                                                  self.config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+        valid_index = DataUtil.load_vector(valid_index_fp, 'int')
+        valid_index = [num - 1 for num in valid_index]
+        train_and_valid_labels = load_labels_from_file(self.config, 'offline', valid_index)
+        valid_instance_fp = '%s/se_tag%s_valid_instance.%s.index' % (index_pt,
+                                                                     self.se_tag,
+                                                                     'offline')
+        valid_instance_index = DataUtil.load_vector(valid_instance_fp, 'int')
+        valid_labels = [train_and_valid_labels[ind] for ind in valid_instance_index]
+
         # load vote_k ids
         index_pt = self.config.get('DIRECTORY', 'index_pt')
         vote_feature_names = self.config.get('RANK', 'vote_features').split()
         vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
         vote_k = self.config.getint('RANK', 'vote_k')
-        vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+        vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name)
         vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
-        valid_instance_fp = '%s/se_tag%s_valid_instance.%s.index' % (index_pt,
-                                                                     self.se_tag,
-                                                                     'offline')
-        valid_labels_lines = load_raw_line_from_file(self.config, vote_k_label_file_path,
-                                                     DataUtil.load_vector(valid_instance_fp, 'int'))
+        valid_vote_k_labels = [vote_k_label[ind] for ind in valid_instance_index]
+
+        preds_ids = list()
+        for i in range(len(offline_valid_preds)):
+            preds_ids.append(
+                [kv[0] for kv in sorted(zip(offline_valid_preds[i], valid_vote_k_labels[i]), key=lambda x: x[1], reverse=True)])
+
+        F_by_ids(preds_ids, valid_labels)
 
         return offline_valid_preds
 

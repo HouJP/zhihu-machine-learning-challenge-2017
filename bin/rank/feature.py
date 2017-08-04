@@ -114,7 +114,7 @@ def generate_featwheel_feature_from_topic(config, argv):
             LogUtil.log('INFO', 'has featwheel features, JUMP')
             continue
 
-        features = Feature.load_smat('%s/%s.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name))
+        features = Feature.load_smat('%s/%s.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, 'all'))
 
         indexs = list(itertools.chain(*vote_k_label))
         featwheel_features = Feature.sample_row(features, indexs)

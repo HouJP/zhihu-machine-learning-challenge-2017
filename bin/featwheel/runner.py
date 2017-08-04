@@ -127,8 +127,10 @@ class SingleExec(Runner):
                                             'offline',
                                             False)
         # load labels
-        offline_labels = DataUtil.load_vector('%s/%s.label' % (self.config.get('DIRECTORY', 'label_pt'),
-                                                               'offline'),
+        offline_labels_file_path = '%s/featwheel_vote_%d.%s.label' % (self.config.get('DIRECTORY', 'label_pt'),
+                                                                      vote_k,
+                                                                      'offline')
+        offline_labels = DataUtil.load_vector(offline_labels_file_path,
                                               'int')
         # generate index file
         if '' == self.se_tag:
@@ -180,7 +182,8 @@ class SingleExec(Runner):
         valid_instance_fp = '%s/se_tag%s_valid_instance.%s.index' % (index_pt,
                                                                      self.se_tag,
                                                                      'offline')
-        valid_labels_lines = load_raw_line_from_file(self.config, vote_k_label_file_path, DataUtil.load_vector(valid_instance_fp, 'int'))
+        valid_labels_lines = load_raw_line_from_file(self.config, vote_k_label_file_path,
+                                                     DataUtil.load_vector(valid_instance_fp, 'int'))
 
         return offline_valid_preds
 

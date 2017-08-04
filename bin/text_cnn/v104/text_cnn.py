@@ -10,17 +10,16 @@ Change window size of Conv: [1-10, 11, 13, 15, 20]
 """
 
 
-from keras.layers import *
-from keras.layers.merge import *
+from keras.layers import Dense, Input, Embedding, Conv1D, GlobalMaxPooling1D, Dropout
+from keras.layers.merge import concatenate
 from keras.models import Model, model_from_json
 from keras import optimizers
 import tensorflow as tf
 from keras import backend as K
-from Scale import Scale
 
 from bin.utils import LogUtil
 from bin.text_cnn.loss import binary_crossentropy_sum
-from bin.text_cnn.data_helpers import load_embedding, load_embedding_with_idx
+from bin.text_cnn.data_helpers import load_embedding
 
 
 def init_text_cnn(config):
@@ -47,14 +46,6 @@ def init_text_cnn(config):
     char_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
                                    config.get('TITLE_CONTENT_CNN', 'char_embedding_fn'))
     char_embedding_index, char_embedding_matrix = load_embedding(char_embedding_fp)
-    # load word idf embedding file
-    word_idf_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
-                                   config.get('TITLE_CONTENT_CNN', 'word_idf_embedding_fn'))
-    word_idf_embedding_matrix = load_embedding_with_idx(word_idf_embedding_fp, word_embedding_index)
-    # load char embedding file
-    char_idf_embedding_fp = '%s/%s' % (config.get('DIRECTORY', 'embedding_pt'),
-                                   config.get('TITLE_CONTENT_CNN', 'char_idf_embedding_fn'))
-    char_idf_embedding_matrix = load_embedding_with_idx(char_idf_embedding_fp, char_embedding_index)
     # init model
     title_word_length = config.getint('TITLE_CONTENT_CNN', 'title_word_length')
     content_word_length = config.getint('TITLE_CONTENT_CNN', 'content_word_length')
@@ -62,7 +53,6 @@ def init_text_cnn(config):
     content_char_length = config.getint('TITLE_CONTENT_CNN', 'content_char_length')
     fs_btm_tw_cw_length = config.getint('TITLE_CONTENT_CNN', 'fs_btm_tw_cw_length')
     fs_btm_tc_length = config.getint('TITLE_CONTENT_CNN', 'fs_btm_tc_length')
-    fs_idf_100_pl_length = config.getint('TITLE_CONTENT_CNN', 'fs_idf_100_pl_length')
     class_num = config.getint('TITLE_CONTENT_CNN', 'class_num')
     optimizer_name = config.get('TITLE_CONTENT_CNN', 'optimizer_name')
     lr = float(config.get('TITLE_CONTENT_CNN', 'lr'))
@@ -73,12 +63,9 @@ def init_text_cnn(config):
                             content_char_length=content_char_length,
                             fs_btm_tw_cw_length=fs_btm_tw_cw_length,
                             fs_btm_tc_length=fs_btm_tc_length,
-                            fs_idf_100_pl_length=fs_idf_100_pl_length,
                             class_num=class_num,
                             word_embedding_matrix=word_embedding_matrix,
                             char_embedding_matrix=char_embedding_matrix,
-                            word_idf_embedding_matrix = word_idf_embedding_matrix,
-                            char_idf_embedding_matrix = char_idf_embedding_matrix,
                             optimizer_name=optimizer_name,
                             lr=lr,
                             metrics=metrics)
@@ -94,12 +81,9 @@ class TitleContentCNN(object):
                  content_char_length,
                  fs_btm_tw_cw_length,
                  fs_btm_tc_length,
-                 fs_idf_100_pl_length,
                  class_num,
                  word_embedding_matrix,
                  char_embedding_matrix,
-                 word_idf_embedding_matrix,
-                 char_idf_embedding_matrix,
                  optimizer_name,
                  lr,
                  metrics):
@@ -128,48 +112,37 @@ class TitleContentCNN(object):
             word_embedding_layer = Embedding(len(word_embedding_matrix),
                                          256,
                                          weights=[word_embedding_matrix],
-                                         trainable=True, name='word_embedding')
+                                         trainable=False, name='word_embedding')
             title_word_emb = word_embedding_layer(title_word_input)
             cont_word_emb = word_embedding_layer(cont_word_input)
 
             char_embedding_layer = Embedding(len(char_embedding_matrix),
                                          256,
                                          weights=[char_embedding_matrix],
-                                         trainable=True, name='char_embedding')
+                                         trainable=False, name='char_embedding')
             title_char_emb = char_embedding_layer(title_char_input)
             cont_char_emb = char_embedding_layer(cont_char_input)
 
-            word_idf_embedding_layer = Embedding(len(word_idf_embedding_matrix),
-                                         1,
-                                         weights=[word_idf_embedding_matrix],
-                                         trainable=False, name='word_idf_embedding')
-            title_word_idf_emb = word_idf_embedding_layer(title_word_input)
-            cont_word_idf_emb = word_idf_embedding_layer(cont_word_input)
-
-            char_idf_embedding_layer = Embedding(len(char_idf_embedding_matrix),
-                                         1,
-                                         weights=[char_idf_embedding_matrix],
-                                         trainable=False, name='char_idf_embedding')
-            title_char_idf_emb = char_idf_embedding_layer(title_char_input)
-            cont_char_idf_emb = char_idf_embedding_layer(cont_char_input)
-
-        title_word_emb = concatenate([title_word_emb, title_word_idf_emb])
-        cont_word_emb = concatenate([cont_word_emb, cont_word_idf_emb])
-        title_char_emb = concatenate([title_char_emb, title_char_idf_emb])
-        cont_char_emb = concatenate([cont_char_emb, cont_char_idf_emb])
+        title_word_emb = Conv1D(256, 1, padding='same')(title_word_emb)
+        cont_word_emb = Conv1D(256, 1, padding='same')(cont_word_emb)
+        title_char_emb = Conv1D(256, 1, padding='same')(title_char_emb)
+        cont_char_emb = Conv1D(256, 1, padding='same')(cont_char_emb)
 
         # Create a convolution + max pooling layer
         title_content_features = list()
         for win_size in range(1, 8):
             # batch_size x doc_len x embed_size
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(500, win_size, activation='relu', padding='same')(title_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(cont_word_emb)))
+                GlobalMaxPooling1D()(Conv1D(250, win_size, activation='relu', padding='same')(cont_word_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(title_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(500, win_size, activation='relu', padding='same')(title_char_emb)))
             title_content_features.append(
-                GlobalMaxPooling1D()(Conv1D(100, win_size, activation='relu', padding='same')(cont_char_emb)))
+                GlobalMaxPooling1D()(Conv1D(250, win_size, activation='relu', padding='same')(cont_char_emb)))
+
+        title_content_features_conv = concatenate(title_content_features)
+        title_content_features_conv = Dropout(0.2, name='title_content_features_conv_drop')(title_content_features_conv)
 
         # add btm_tw_cw features + btm_tc features
         fs_btm_tw_cw_input = Input(shape=(fs_btm_tw_cw_length,), dtype='float32', name="fs_btm_tw_cw_input")
@@ -177,29 +150,22 @@ class TitleContentCNN(object):
         fs_btm_raw_features = concatenate([fs_btm_tw_cw_input, fs_btm_tc_input])
         fs_btm_emb_features = Dense(1024, activation='relu', name='fs_btm_embedding')(fs_btm_raw_features)
         fs_btm_emb_features = Dropout(0.5, name='fs_btm_embedding_dropout')(fs_btm_emb_features)
-        title_content_features.append(fs_btm_emb_features)
 
-        title_content_features = concatenate(title_content_features)
-
-        # add word share features
-        fs_idf_100_pl_input = Input(shape=(fs_idf_100_pl_length,), dtype='float32', name="fs_idf_100_pl_input")
-        preds_prior = Activation("sigmoid")(Scale()(fs_idf_100_pl_input))
+        title_content_features = concatenate([title_content_features_conv, fs_btm_emb_features])
 
         # Full connection
-        title_content_features = Dense(3600, activation='relu', name='fs_embedding')(title_content_features)
-        title_content_features = Dropout(0.5, name='fs_embedding_dropout')(title_content_features)
+        title_content_features = Dense(5000, activation='relu', name='fs_embedding')(title_content_features)
+        title_content_features = Dropout(0.2, name='fs_embedding_dropout')(title_content_features)
 
         # Prediction
-        preds_lh = Dense(class_num, activation='sigmoid')(title_content_features)
-        preds = Multiply(name='prediction')([preds_prior, preds_lh])
+        preds = Dense(class_num, activation='sigmoid', name='prediction')(title_content_features)
 
         self._model = Model([title_word_input,
                              cont_word_input,
                              title_char_input,
                              cont_char_input,
                              fs_btm_tw_cw_input,
-                             fs_btm_tc_input, 
-                             fs_idf_100_pl_input], preds)
+                             fs_btm_tc_input], preds)
         if 'rmsprop' == optimizer_name:
             optimizer = optimizers.RMSprop(lr=lr)
         elif 'adam' == optimizer_name:

@@ -36,6 +36,8 @@ def generate(config, argv):
         label_id = int(label2id[tid_list[line_id]])
         features[label_id] = feature
 
+    feature_file.write('%d %d\n' % (len(features), len(features[0])))
+
     for feature in features:
         Feature.save_feature(feature, feature_file)
 

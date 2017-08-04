@@ -50,7 +50,7 @@ class Runner(object):
     def __init_out_dir(self):
         # generate output tag
         self.out_tag = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
-        self.config.set('DIRECTORY', str(self.out_tag))
+        self.config.set('DIRECTORY', 'out_tag', str(self.out_tag))
         # generate output directory
         out_pt = self.config.get('DIRECTORY', 'out_pt')
         out_pt_exists = os.path.exists(out_pt)

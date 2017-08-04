@@ -87,6 +87,41 @@ def generate_featwheel_feature_from_instance(config, argv):
         Feature.save_smat(featwheel_features, featwheel_feature_file_path)
 
 
+def generate_featwheel_feature_from_topic(config, argv):
+    data_name = argv[0]
+
+    # load vote_k ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+    vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name)
+    vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
+
+    # load topic features
+    feature_names = config.get('RANK', 'topic_features').split()
+    for feature_name in feature_names:
+        LogUtil.log('INFO', 'topic_feature=%s' % feature_name)
+
+        featwheel_feature_file_path = '%s/featwheel_vote_%d_%s.%s.smat' % (
+            config.get('DIRECTORY', 'dataset_pt'),
+            vote_k,
+            feature_name,
+            data_name)
+        LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_feature_file_path)
+        has_featwheel_features = isfile('%s' % featwheel_feature_file_path)
+        if has_featwheel_features:
+            LogUtil.log('INFO', 'has featwheel features, JUMP')
+            continue
+
+        features = Feature.load_smat('%s/%s.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name))
+
+        indexs = list(itertools.chain(*vote_k_label))
+        featwheel_features = Feature.sample_row(features, indexs)
+
+        Feature.save_smat(featwheel_features, featwheel_feature_file_path)
+
+
 if __name__ == '__main__':
     config_fp = sys.argv[1]
     config = ConfigParser.ConfigParser()

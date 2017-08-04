@@ -13,6 +13,7 @@ from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
 from ..evaluation import F_by_ids
 from ..featwheel.feature import Feature
+from ..featwheel.runner import Runner
 
 
 def load_parameters(config):
@@ -60,17 +61,28 @@ def train(config, argv):
     offline_labels = DataUtil.load_vector(offline_labels_file_path,
                                           'int')
 
+    # train index
+    train_instance_num = 66666
+    train_index = [i for i in range(train_instance_num * rank_k)]
+    # train dataset
+    train_features, train_labels, _ = Runner._generate_data(train_index, offline_labels, offline_features, -1)
+    dtrain = xgb.DMatrix(train_features, label=train_labels)
+    dtrain.set_group([rank_k] * (train_features.shape[0] / rank_k))
 
-    dtrain = xgb.DMatrix(offline_features, label=offline_labels)
-    dtrain.set_group([rank_k] * (offline_features.shape[0] / rank_k))
+    # valid index
+    valid_instance_num = 100000 - train_instance_num
+    valid_index = [train_instance_num * rank_k + i for i in range(valid_instance_num * rank_k)]
+    # valid dataset
+    valid_features, valid_labels, _ = Runner._generate_data(valid_index, offline_labels, offline_features, -1)
+    dvalid = xgb.DMatrix(valid_features, label=valid_labels)
+    dvalid.set_group([rank_k] * (valid_features.shape[0] / rank_k))
 
     # dvalid_fp = stand_path('%s/%s_valid.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
     # group_valid_fp = dvalid_fp + '.group'
     # dvalid = xgb.DMatrix(dvalid_fp)
     # dvalid.set_group(DataUtil.load_vector(group_valid_fp, 'int'))
 
-    # watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
-    watchlist = [(dtrain, 'train')]
+    watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
     params = load_parameters(config)
     model = xgb.train(params,
                       dtrain,

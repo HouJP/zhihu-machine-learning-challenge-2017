@@ -14,7 +14,7 @@ import xgboost as xgb
 from sklearn.externals import joblib
 from sklearn.linear_model import LogisticRegression as skl_logistic_regression
 
-from bin.featwheel.utils import LogUtil
+from ..utils import LogUtil
 
 
 class Model(object):

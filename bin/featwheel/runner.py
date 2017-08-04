@@ -181,7 +181,7 @@ class SingleExec(Runner):
                                                                      self.se_tag,
                                                                      'offline')
         valid_labels_lines = load_raw_line_from_file(self.config, vote_k_label_file_path, DataUtil.load_vector(valid_instance_fp, 'int'))
-        
+
         return offline_valid_preds
 
     def run_online(self):

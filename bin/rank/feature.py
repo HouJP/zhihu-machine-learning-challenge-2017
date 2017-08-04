@@ -15,7 +15,7 @@ from ..text_cnn.data_helpers import load_features_from_file
 from ..featwheel.feature import Feature
 
 
-def generate_featwheel_feature_from_vote(config, argv):
+def generate_featwheel_feature_from_model(config, argv):
     data_name = argv[0]
 
     # load vote_k ids

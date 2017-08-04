@@ -145,7 +145,7 @@ class SingleExec(Runner):
                                                                   'offline')
         offline_train_indexs = DataUtil.load_vector(offline_train_indexs_fp, 'int')
         offline_train_features, offline_train_labels, offline_train_balanced_indexs = \
-            SingleExec.__generate_data(offline_train_indexs,
+            self.__generate_data(offline_train_indexs,
                                        offline_labels,
                                        offline_features,
                                        offline_train_pos_rate)
@@ -158,7 +158,7 @@ class SingleExec(Runner):
                                                                   'offline')
         offline_valid_indexs = DataUtil.load_vector(offline_valid_indexs_fp, 'int')
         offline_valid_features, offline_valid_labels, offline_valid_balanced_indexs = \
-            SingleExec.__generate_data(offline_valid_indexs,
+            self.__generate_data(offline_valid_indexs,
                                        offline_labels,
                                        offline_features,
                                        offline_valid_pos_rate)

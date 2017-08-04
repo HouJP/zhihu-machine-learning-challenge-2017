@@ -122,6 +122,7 @@ class XGB(Model):
                                watchlist,
                                early_stopping_rounds=self.params['early_stop'],
                                verbose_eval=self.params['verbose_eval'])
+        LogUtil.log('INFO', 'best_ntree_limit=%d' % self.model.best_ntree_limit)
         # self.__unlock()
         valid_preds = self.model.predict(valid_DMatrix, ntree_limit=self.model.best_ntree_limit)
         return valid_preds

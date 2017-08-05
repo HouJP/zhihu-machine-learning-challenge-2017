@@ -7,39 +7,70 @@
 
 import sys
 import ConfigParser
+import hashlib
 from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
 
 
-def generate(config, argv):
+def generate_offline(config, argv):
     data_name = 'offline'
-    rank_id = config.get('RANK', 'rank_id')
-    # load valid dataset index
+
+    # load labels
     valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
                                               config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
     valid_index = DataUtil.load_vector(valid_index_fp, 'int')
     valid_index = [num - 1 for num in valid_index]
+    labels = load_labels_from_file(config, data_name, valid_index)
 
-    # load topk ids
+    # load vote_k ids
     index_pt = config.get('DIRECTORY', 'index_pt')
-    topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), data_name)
-    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')
-    LogUtil.log('INFO', 'topk_class_index_fp=%s' % topk_class_index_fp)
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+    vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name)
+    vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
 
-    # load labels
-    feature_name = 'labels'
-    LogUtil.log('INFO', 'feature_name=%s' % feature_name)
-    rank_features_fp = '%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, rank_id, data_name)
-    LogUtil.log('INFO', 'rank_features_fp=%s' % rank_features_fp)
-    rank_features_f = open(rank_features_fp, 'w')
-    features = load_labels_from_file(config, data_name, valid_index)
+    assert len(labels) == len(vote_k_label)
 
-    assert len(topk_label_id) == len(features)
-    for line_id in range(len(topk_label_id)):
-        rank_features = [str(features[line_id][lid]) for lid in topk_label_id[line_id]]
-        rank_features_f.write('%s\n' % ','.join(rank_features))
+    featwheel_label_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (
+        config.get('DIRECTORY', 'label_pt'),
+        vote_k,
+        vote_k_label_file_name,
+        data_name)
+    LogUtil.log('INFO', 'featwheel_label_file_path=%s' % featwheel_label_file_path)
+    featwheel_feature_file = open(featwheel_label_file_path, 'w')
 
-    rank_features_f.close()
+    for line_id in range(len(labels)):
+        for label_id in vote_k_label[line_id]:
+            featwheel_feature_file.write('%d\n' % labels[line_id][label_id])
+
+    featwheel_feature_file.close()
+
+
+def generate_online(config, argv):
+    data_name = 'online'
+
+    # load vote_k ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+    vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name)
+    vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
+
+    featwheel_label_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (
+        config.get('DIRECTORY', 'label_pt'),
+        vote_k,
+        vote_k_label_file_name,
+        data_name)
+    LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_label_file_path)
+    featwheel_label_file = open(featwheel_label_file_path, 'w')
+
+    for line_id in range(len(vote_k_label)):
+        for label_id in vote_k_label[line_id]:
+            featwheel_label_file.write('0\n')
+
+    featwheel_label_file.close()
 
 
 if __name__ == '__main__':

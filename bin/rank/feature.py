@@ -70,9 +70,10 @@ def generate_featwheel_feature_from_instance(config, argv):
     for feature_name in feature_names:
         LogUtil.log('INFO', 'instance_feature=%s' % feature_name)
 
-        featwheel_feature_file_path = '%s/featwheel_vote_%d_%s.%s.smat' % (
+        featwheel_feature_file_path = '%s/featwheel_vote_%d_%s_%s.%s.smat' % (
             config.get('DIRECTORY', 'dataset_pt'),
             vote_k,
+            vote_k_label_file_name,
             feature_name,
             data_name)
         LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_feature_file_path)
@@ -106,9 +107,10 @@ def generate_featwheel_feature_from_topic(config, argv):
     for feature_name in feature_names:
         LogUtil.log('INFO', 'topic_feature=%s' % feature_name)
 
-        featwheel_feature_file_path = '%s/featwheel_vote_%d_%s.%s.smat' % (
+        featwheel_feature_file_path = '%s/featwheel_vote_%d_%s_%s.%s.smat' % (
             config.get('DIRECTORY', 'dataset_pt'),
             vote_k,
+            vote_k_label_file_name,
             feature_name,
             data_name)
         LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_feature_file_path)

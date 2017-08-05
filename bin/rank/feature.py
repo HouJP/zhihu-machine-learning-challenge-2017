@@ -11,7 +11,6 @@ import hashlib
 import itertools
 from ..utils import DataUtil, LogUtil
 from os.path import isfile
-from ..text_cnn.data_helpers import load_features_from_file
 from ..featwheel.feature import Feature
 
 
@@ -31,7 +30,11 @@ def generate_featwheel_feature_from_model(config, argv):
     for feature_name in feature_names:
         LogUtil.log('INFO', 'model_feature=%s' % feature_name)
 
-        featwheel_feature_file_path = '%s/featwheel_vote_%d_%s.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), vote_k, feature_name, data_name)
+        featwheel_feature_file_path = '%s/featwheel_vote_%d_%s_%s.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'),
+                                                                              vote_k,
+                                                                              vote_k_label_file_name,
+                                                                              feature_name,
+                                                                              data_name)
         LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_feature_file_path)
         has_featwheel_features = isfile('%s' % featwheel_feature_file_path)
         if has_featwheel_features:
@@ -44,7 +47,7 @@ def generate_featwheel_feature_from_model(config, argv):
         featwheel_feature_file = open(featwheel_feature_file_path, 'w')
         featwheel_feature_file.write('%d %d\n' % (len(features) * vote_k, 1))
 
-        for line_id in range(len(vote_k_label)):
+        for line_id in range(len(features)):
             for lid in vote_k_label[line_id]:
                 Feature.save_feature([features[line_id][lid]], featwheel_feature_file)
 

@@ -71,16 +71,16 @@ def train(config, argv):
     train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
     valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
 
-    train_dtrain = xgb.DMatrix(train_features, label=train_labels)
-    train_dtrain.set_group([vote_k] * (len(train_labels) / vote_k))
+    dtrain = xgb.DMatrix(train_features, label=train_labels)
+    dtrain.set_group([vote_k] * (len(train_labels) / vote_k))
 
-    valid_dtrain = xgb.DMatrix(valid_features, label=valid_labels)
-    valid_dtrain.set_group([vote_k] * (len(valid_labels) / vote_k))
+    dvalid = xgb.DMatrix(valid_features, label=valid_labels)
+    dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
-    watchlist = [(train_dtrain, 'train'), (valid_dtrain, 'valid')]
+    watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
     params = load_parameters(config)
     model = xgb.train(params,
-                      train_dtrain,
+                      dtrain,
                       params['num_round'],
                       watchlist,
                       early_stopping_rounds=params['early_stop'],

@@ -32,12 +32,13 @@ def generate_offline(config, argv):
 
     assert len(labels) == len(vote_k_label)
 
-    featwheel_feature_file_path = '%s/featwheel_vote_%d.%s.label' % (
+    featwheel_label_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (
         config.get('DIRECTORY', 'label_pt'),
         vote_k,
+        vote_k_label_file_name,
         data_name)
-    LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_feature_file_path)
-    featwheel_feature_file = open(featwheel_feature_file_path, 'w')
+    LogUtil.log('INFO', 'featwheel_label_file_path=%s' % featwheel_label_file_path)
+    featwheel_feature_file = open(featwheel_label_file_path, 'w')
 
     for line_id in range(len(labels)):
         for label_id in vote_k_label[line_id]:
@@ -57,18 +58,19 @@ def generate_online(config, argv):
     vote_k_label_file_path = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name)
     vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
 
-    featwheel_feature_file_path = '%s/featwheel_vote_%d.%s.label' % (
+    featwheel_label_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (
         config.get('DIRECTORY', 'label_pt'),
         vote_k,
+        vote_k_label_file_name,
         data_name)
-    LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_feature_file_path)
-    featwheel_feature_file = open(featwheel_feature_file_path, 'w')
+    LogUtil.log('INFO', 'featwheel_feature_file_path=%s' % featwheel_label_file_path)
+    featwheel_label_file = open(featwheel_label_file_path, 'w')
 
     for line_id in range(len(vote_k_label)):
         for label_id in vote_k_label[line_id]:
-            featwheel_feature_file.write('0\n')
+            featwheel_label_file.write('0\n')
 
-    featwheel_feature_file.close()
+    featwheel_label_file.close()
 
 
 if __name__ == '__main__':

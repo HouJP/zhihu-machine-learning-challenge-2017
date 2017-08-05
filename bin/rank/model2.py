@@ -6,15 +6,14 @@
 
 
 import xgboost as xgb
-import sys
 import hashlib
+import sys
 import ConfigParser
 import json
 from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
 from ..evaluation import F_by_ids
 from ..featwheel.feature import Feature
-from ..featwheel.runner import Runner
 
 
 def load_parameters(config):
@@ -42,14 +41,12 @@ def stand_path(s):
 
 
 def train(config, argv):
-    # load parameters
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
-    rank_k = config.getint('RANK', 'rank_k')
+    # load feture names
     feature_names = config.get('RANK', 'model_features').split()
-    # feature_names = config.get('RANK', 'model_features').split() + \
-    #                 config.get('RANK', 'instance_features').split() + \
-    #                 config.get('RANK', 'topic_features').split()
-    feature_names = ['featwheel_vote_%d_%s' % (vote_k, fn) for fn in feature_names]
+    feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in feature_names]
 
     # load feature matrix
     offline_features = Feature.load_all(config.get('DIRECTORY', 'dataset_pt'),
@@ -57,34 +54,16 @@ def train(config, argv):
                                         'offline',
                                         False)
     # load labels
-    offline_labels_file_path = '%s/featwheel_vote_%d.%s.label' % (config.get('DIRECTORY', 'label_pt'),
+    offline_labels_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (config.get('DIRECTORY', 'label_pt'),
                                                                   vote_k,
+                                                                     vote_k_label_file_name,
                                                                   'offline')
-    offline_labels = DataUtil.load_vector(offline_labels_file_path,
-                                          'int')
+    offline_labels = DataUtil.load_vector(offline_labels_file_path, 'int')
 
-    # train index
-    train_instance_num = 66666
-    train_index = [i for i in range(train_instance_num * rank_k)]
-    # train dataset
-    train_features, train_labels, _ = Runner._generate_data(train_index, offline_labels, offline_features, -1)
-    dtrain = xgb.DMatrix(train_features, label=train_labels)
-    dtrain.set_group([rank_k] * (train_features.shape[0] / rank_k))
+    dtrain = xgb.DMatrix(offline_features, label=offline_labels)
+    dtrain.set_group([vote_k] * (len(offline_labels) / vote_k))
 
-    # valid index
-    valid_instance_num = 100000 - train_instance_num
-    valid_index = [train_instance_num * rank_k + i for i in range(valid_instance_num * rank_k)]
-    # valid dataset
-    valid_features, valid_labels, _ = Runner._generate_data(valid_index, offline_labels, offline_features, -1)
-    dvalid = xgb.DMatrix(valid_features, label=valid_labels)
-    dvalid.set_group([rank_k] * (valid_features.shape[0] / rank_k))
-
-    # dvalid_fp = stand_path('%s/%s_valid.libsvm' % (config.get('DIRECTORY', 'dataset_pt'), config.get('RANK', 'dmatrix_name')))
-    # group_valid_fp = dvalid_fp + '.group'
-    # dvalid = xgb.DMatrix(dvalid_fp)
-    # dvalid.set_group(DataUtil.load_vector(group_valid_fp, 'int'))
-
-    watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
+    watchlist = [(dtrain, 'train')]
     params = load_parameters(config)
     model = xgb.train(params,
                       dtrain,
@@ -101,24 +80,19 @@ def train(config, argv):
     valid_index = [num - 1 for num in valid_index]
 
     # load labels
-    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[train_instance_num:]
+    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[50000:]
     # make prediction
     topk = config.getint('RANK', 'topk')
     # valid_preds = model.predict(dvalid)
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
     # valid_preds = model.predict(dvalid, ntree_limit=params['num_round'])
     valid_preds = [num for num in valid_preds]
-    valid_preds = zip(*[iter(valid_preds)] * rank_k)
+    valid_preds = zip(*[iter(valid_preds)] * topk)
 
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
-    dataset_pt = config.get('DIRECTORY', 'dataset_pt')
-    vote_k = config.getint('RANK', 'vote_k')
-    vote_feature_names = config.get('RANK', 'vote_features').split()
-    vote_feature_files = [open('%s/%s.%s.csv' % (dataset_pt, fn, 'offline'), 'r') for fn in vote_feature_names]
-    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
-    topk_class_index_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
-    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[train_instance_num:]
+    topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), 'offline')
+    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[50000:]
 
     preds_ids = list()
     for i in range(len(topk_label_id)):

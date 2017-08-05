@@ -68,8 +68,8 @@ def train(config, argv):
     rank_valid_indexs = [(50000 * vote_k + i) for i in range(50000 * vote_k)]
 
     # generate DMatrix
-    train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features)
-    valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features)
+    train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
+    valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
 
     train_dtrain = xgb.DMatrix(train_features, label=train_labels)
     train_dtrain.set_group([vote_k] * (len(train_labels) / vote_k))

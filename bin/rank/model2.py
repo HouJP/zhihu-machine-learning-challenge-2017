@@ -96,26 +96,25 @@ def train(config, argv):
     # load labels
     valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[50000:]
     # make prediction
-    topk = config.getint('RANK', 'topk')
     # valid_preds = model.predict(dvalid)
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
     # valid_preds = model.predict(dvalid, ntree_limit=params['num_round'])
     valid_preds = [num for num in valid_preds]
-    valid_preds = zip(*[iter(valid_preds)] * topk)
+    valid_preds = zip(*[iter(valid_preds)] * vote_k)
 
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
-    topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), 'offline')
-    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')[50000:]
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')[50000:]
 
     preds_ids = list()
-    for i in range(len(topk_label_id)):
-        preds_ids.append([kv[0] for kv in sorted(zip(topk_label_id[i], valid_preds[i]), key=lambda x:x[1], reverse=True)])
+    for i in range(len(vote_k_label)):
+        preds_ids.append([kv[0] for kv in sorted(zip(vote_k_label[i], valid_preds[i]), key=lambda x:x[1], reverse=True)])
 
-    F_by_ids(topk_label_id, valid_labels)
+    F_by_ids(vote_k_label, valid_labels)
     F_by_ids(preds_ids, valid_labels)
 
-    predict_online(model, model.best_ntree_limit)
+    # predict_online(model, model.best_ntree_limit)
     # predict_online(model, params['num_round'])
 
 

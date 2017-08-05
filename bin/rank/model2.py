@@ -14,6 +14,7 @@ from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
 from ..evaluation import F_by_ids
 from ..featwheel.feature import Feature
+from ..featwheel.runner import Runner
 
 
 def load_parameters(config):
@@ -44,6 +45,7 @@ def train(config, argv):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
+
     # load feture names
     feature_names = config.get('RANK', 'model_features').split()
     feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in feature_names]
@@ -53,6 +55,7 @@ def train(config, argv):
                                         feature_names,
                                         'offline',
                                         False)
+
     # load labels
     offline_labels_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (config.get('DIRECTORY', 'label_pt'),
                                                                   vote_k,
@@ -60,13 +63,24 @@ def train(config, argv):
                                                                   'offline')
     offline_labels = DataUtil.load_vector(offline_labels_file_path, 'int')
 
-    dtrain = xgb.DMatrix(offline_features, label=offline_labels)
-    dtrain.set_group([vote_k] * (len(offline_labels) / vote_k))
+    # generete indexs
+    rank_train_indexs = [i for i in range(50000 * vote_k)]
+    rank_valid_indexs = [(50000 * vote_k + i) for i in range(50000 * vote_k)]
 
-    watchlist = [(dtrain, 'train')]
+    # generate DMatrix
+    train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features)
+    valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features)
+
+    train_dtrain = xgb.DMatrix(train_features, label=train_labels)
+    train_dtrain.set_group([vote_k] * (len(train_labels) / vote_k))
+
+    valid_dtrain = xgb.DMatrix(valid_features, label=valid_labels)
+    valid_dtrain.set_group([vote_k] * (len(valid_labels) / vote_k))
+
+    watchlist = [(train_dtrain, 'train'), (valid_dtrain, 'valid')]
     params = load_parameters(config)
     model = xgb.train(params,
-                      dtrain,
+                      train_dtrain,
                       params['num_round'],
                       watchlist,
                       early_stopping_rounds=params['early_stop'],

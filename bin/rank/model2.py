@@ -10,6 +10,7 @@ import hashlib
 import sys
 import ConfigParser
 import json
+import numpy as np
 from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
 from ..evaluation import F_by_ids
@@ -87,9 +88,19 @@ def train(config, argv):
                                                                   'offline')
     offline_labels = DataUtil.load_vector(offline_labels_file_path, 'int')
 
+    num_instance = 100000
+    num_p1 = 33333
+    num_p2 = 33333
+    num_p3 = num_instance - num_p1 - num_p2
+
+    # generate index for each part
+    rank_p1_indexs = [i for i in range(num_p1 * vote_k)]
+    rank_p2_indexs = [(num_p1 * vote_k + i) for i in range(num_p2 * vote_k)]
+    rank_p3_indexs = [((num_p1 + num_p2) * vote_k + i) for i in range(num_p3 * vote_k)]
+
     # generete indexs
-    rank_train_indexs = [i for i in range(50000 * vote_k)]
-    rank_valid_indexs = [(50000 * vote_k + i) for i in range(50000 * vote_k)]
+    rank_train_indexs = rank_p1_indexs + rank_p2_indexs
+    rank_valid_indexs = rank_p3_indexs
 
     # generate DMatrix
     train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
@@ -101,13 +112,52 @@ def train(config, argv):
     dvalid = xgb.DMatrix(valid_features, label=valid_labels)
     dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
+    model1 = fit_model(config, dtrain, dvalid, num_instance, rank_valid_indexs)
+
+    # generate indexs
+    rank_train_indexs = rank_p2_indexs + rank_p3_indexs
+    rank_valid_indexs = rank_p1_indexs
+
+    # generate DMatrix
+    train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
+    valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
+
+    dtrain = xgb.DMatrix(train_features, label=train_labels)
+    dtrain.set_group([vote_k] * (len(train_labels) / vote_k))
+
+    dvalid = xgb.DMatrix(valid_features, label=valid_labels)
+    dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
+
+    model2 = fit_model(config, dtrain, dvalid, num_instance, rank_valid_indexs)
+
+    # generate indexs
+    rank_train_indexs = rank_p3_indexs + rank_p1_indexs
+    rank_valid_indexs = rank_p2_indexs
+
+    # generate DMatrix
+    train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
+    valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
+
+    dtrain = xgb.DMatrix(train_features, label=train_labels)
+    dtrain.set_group([vote_k] * (len(train_labels) / vote_k))
+
+    dvalid = xgb.DMatrix(valid_features, label=valid_labels)
+    dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
+
+    model3 = fit_model(config, dtrain, dvalid, num_instance, rank_valid_indexs)
+
+def fit_model(config, dtrain, dvalid, rank_valid_indexs):
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+
     watchlist = [(dtrain, 'train'), (dvalid, 'valid')]
     params = load_parameters(config)
     model = xgb.train(params,
                       dtrain,
                       params['num_round'],
                       watchlist,
-                      feval=self_define_f,
+    #                  feval=self_define_f,
                       early_stopping_rounds=params['early_stop'],
                       verbose_eval=params['verbose_eval'])
     LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)
@@ -119,7 +169,7 @@ def train(config, argv):
     valid_index = [num - 1 for num in valid_index]
 
     # load labels
-    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[50000:]
+    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[rank_valid_indexs]
     # make prediction
     # valid_preds = model.predict(dvalid)
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
@@ -130,7 +180,7 @@ def train(config, argv):
     # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
     vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
-    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')[50000:]
+    vote_k_label = np.array(DataUtil.load_matrix(vote_k_label_fp, 'int'))[rank_valid_indexs]
 
     preds_ids = list()
     for i in range(len(vote_k_label)):
@@ -138,6 +188,8 @@ def train(config, argv):
 
     F_by_ids(vote_k_label, valid_labels)
     F_by_ids(preds_ids, valid_labels)
+
+    return model
 
     # predict_online(model, model.best_ntree_limit)
     # predict_online(model, params['num_round'])

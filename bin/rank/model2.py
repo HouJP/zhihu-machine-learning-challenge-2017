@@ -188,10 +188,10 @@ def fit_model(config, dtrain, dvalid):
                       dtrain,
                       params['num_round'],
                       watchlist,
-                      feval=self_define_f,
+    #                  feval=self_define_f,
                       early_stopping_rounds=params['early_stop'],
                       verbose_eval=params['verbose_eval'])
-    LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)
+    LogUtil.log('INFO', 'best_ntree_limit=%d, best_score=%f' % (model.best_ntree_limit, model.best_score))
 
     # make prediction
     # valid_preds = model.predict(dvalid)

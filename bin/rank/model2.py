@@ -146,6 +146,8 @@ def train(config, argv):
 
     model3 = fit_model(config, dtrain, dvalid, rank_valid_indexs)
 
+    predict_online(config, model1, model2, model3)
+
 def fit_model(config, dtrain, dvalid, rank_valid_indexs):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
@@ -169,7 +171,7 @@ def fit_model(config, dtrain, dvalid, rank_valid_indexs):
     valid_index = [num - 1 for num in valid_index]
 
     # load labels
-    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()[rank_valid_indexs]
+    valid_labels = load_labels_from_file(config, 'offline', valid_index)[rank_valid_indexs].tolist()
     # make prediction
     # valid_preds = model.predict(dvalid)
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
@@ -211,10 +213,11 @@ def train_online(config, argv):
     predict_online(model, params['num_round'])
 
 
-def predict_online(model1, model2, model3):
+def predict_online(config, model1, model2, model3):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
+    version_id = config.getint('RANK', 'version_id')
 
     # load feture names
     model_feature_names = config.get('RANK', 'model_features').split()
@@ -253,19 +256,22 @@ def predict_online(model1, model2, model3):
     dtest.set_group([vote_k] * (len(test_labels) / vote_k))
 
     # make prediction
-    topk = config.getint('RANK', 'topk')
-    test_preds = model.predict(dtest, ntree_limit=best_ntree_limit)
-    test_preds = [num for num in test_preds]
-    test_preds = zip(*[iter(test_preds)] * topk)
+    test_preds1 = model1.predict(dtest, ntree_limit=model1.best_ntree_limit)
+    test_preds2 = model2.predict(dtest, ntree_limit=model2.best_ntree_limit)
+    test_preds3 = model3.predict(dtest, ntree_limit=model3.best_ntree_limit)
+
+    test_preds = [test_preds1[line_id] + test_preds2[line_id] + test_preds3[line_id] for line_id in range(len(test_preds1))]
+    test_preds = zip(*[iter(test_preds)] * vote_k)
 
     # load topk ids
+    # load topk ids
     index_pt = config.get('DIRECTORY', 'index_pt')
-    topk_class_index_fp = '%s/%s.%s.index' % (index_pt, config.get('RANK', 'topk_class_index'), 'online')
-    topk_label_id = DataUtil.load_matrix(topk_class_index_fp, 'int')
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'online')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
 
     preds_ids = list()
-    for i in range(len(topk_label_id)):
-        preds_ids.append([kv[0] for kv in sorted(zip(topk_label_id[i], test_preds[i]), key=lambda x:x[1], reverse=True)])
+    for i in range(len(vote_k_label)):
+        preds_ids.append([kv[0] for kv in sorted(zip(vote_k_label[i], test_preds[i]), key=lambda x:x[1], reverse=True)])
 
     # load question ID for online dataset
     qid_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'question_id')
@@ -276,7 +282,7 @@ def predict_online(model1, model2, model3):
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
     id2label = json.load(open(id2label_fp, 'r'))
 
-    rank_submit_fp = '%s/rank_submit.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
+    rank_submit_fp = '%s/rank_submit.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
     rank_submit_f = open(rank_submit_fp, 'w')
     for line_id, p in enumerate(preds_ids):
         label_sorted = [id2label[str(n)] for n in p[:5]]
@@ -285,15 +291,15 @@ def predict_online(model1, model2, model3):
             LogUtil.log('INFO', '%d lines prediction done' % line_id)
     rank_submit_f.close()
 
-    rank_submit_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
+    rank_submit_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
     rank_submit_f = open(rank_submit_fp, 'w')
     for p in test_preds:
         rank_submit_f.write('%s\n' % ','.join([str(num) for num in p]))
     rank_submit_f.close()
 
-    rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), run_id)
+    rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
     rank_submit_ave_f = open(rank_submit_ave_fp, 'w')
-    for line_id, p in enumerate(topk_label_id):
+    for line_id, p in enumerate(vote_k_label):
         label_sorted = [id2label[str(n)] for n in p[:5]]
         rank_submit_ave_f.write("%s,%s\n" % (qid_on[line_id], ','.join(label_sorted)))
         if 0 == line_id % 10000:

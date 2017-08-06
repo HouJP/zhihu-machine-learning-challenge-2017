@@ -117,7 +117,7 @@ def train(config, argv):
     dvalid = xgb.DMatrix(valid_features, label=valid_labels)
     dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
-    model1 = fit_model(config, dtrain, dvalid, ins_p3_indexs)
+    valid_preds1, model1 = fit_model(config, dtrain, dvalid)
 
     # generate indexs
     rank_train_indexs = rank_p2_indexs + rank_p3_indexs
@@ -133,7 +133,7 @@ def train(config, argv):
     dvalid = xgb.DMatrix(valid_features, label=valid_labels)
     dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
-    model2 = fit_model(config, dtrain, dvalid, ins_p1_indexs)
+    valid_preds2, model2 = fit_model(config, dtrain, dvalid)
 
     # generate indexs
     rank_train_indexs = rank_p3_indexs + rank_p1_indexs
@@ -149,11 +149,35 @@ def train(config, argv):
     dvalid = xgb.DMatrix(valid_features, label=valid_labels)
     dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
-    model3 = fit_model(config, dtrain, dvalid, ins_p2_indexs)
+    valid_preds3, model3 = fit_model(config, dtrain, dvalid)
+
+    valid_preds = valid_preds2 + valid_preds3 + valid_preds1
+
+    # load valid dataset index
+    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                              config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
+    valid_index = [num - 1 for num in valid_index]
+
+    # load labels
+    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()
+
+    # load topk ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
+
+    preds_ids = list()
+    for i in range(len(vote_k_label)):
+        preds_ids.append(
+            [kv[0] for kv in sorted(zip(vote_k_label[i], valid_preds[i]), key=lambda x: x[1], reverse=True)])
+
+    F_by_ids(vote_k_label, valid_labels)
+    F_by_ids(preds_ids, valid_labels)
 
     predict_online(config, model1, model2, model3)
 
-def fit_model(config, dtrain, dvalid, ins_indexs):
+def fit_model(config, dtrain, dvalid):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
@@ -169,14 +193,6 @@ def fit_model(config, dtrain, dvalid, ins_indexs):
                       verbose_eval=params['verbose_eval'])
     LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)
 
-    # load valid dataset index
-    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
-                                              config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
-    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
-    valid_index = [num - 1 for num in valid_index]
-
-    # load labels
-    valid_labels = load_labels_from_file(config, 'offline', valid_index)[ins_indexs].tolist()
     # make prediction
     # valid_preds = model.predict(dvalid)
     valid_preds = model.predict(dvalid, ntree_limit=model.best_ntree_limit)
@@ -184,19 +200,9 @@ def fit_model(config, dtrain, dvalid, ins_indexs):
     valid_preds = [num for num in valid_preds]
     valid_preds = zip(*[iter(valid_preds)] * vote_k)
 
-    # load topk ids
-    index_pt = config.get('DIRECTORY', 'index_pt')
-    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
-    vote_k_label = np.array(DataUtil.load_matrix(vote_k_label_fp, 'int'))[ins_indexs].tolist()
 
-    preds_ids = list()
-    for i in range(len(vote_k_label)):
-        preds_ids.append([kv[0] for kv in sorted(zip(vote_k_label[i], valid_preds[i]), key=lambda x:x[1], reverse=True)])
 
-    F_by_ids(vote_k_label, valid_labels)
-    F_by_ids(preds_ids, valid_labels)
-
-    return model
+    return valid_preds, model
 
     # predict_online(model, model.best_ntree_limit)
     # predict_online(model, params['num_round'])

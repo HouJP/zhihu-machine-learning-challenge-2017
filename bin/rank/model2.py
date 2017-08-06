@@ -41,6 +41,20 @@ def stand_path(s):
     return '/' + '/'.join(filter(None, s.split('/')))
 
 
+def self_define_f(preds, dtrain):
+    vote_k = config.getint('RANK', 'vote_k')
+
+    labels = zip(*[iter(list(dtrain.get_label()))] * vote_k)
+    preds = zip(*[iter(preds)] * vote_k)
+
+    preds_ids = list()
+    for i in range(len(preds)):
+        preds_ids.append(
+            [kv[0] for kv in sorted(enumerate(preds[i]), key=lambda x: x[1], reverse=True)])
+
+    return -1. * F_by_ids(preds_ids, labels)
+
+
 def train(config, argv):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
@@ -93,6 +107,7 @@ def train(config, argv):
                       dtrain,
                       params['num_round'],
                       watchlist,
+                      feval=self_define_f,
                       early_stopping_rounds=params['early_stop'],
                       verbose_eval=params['verbose_eval'])
     LogUtil.log('INFO', 'best_ntree_limit=%d' % model.best_ntree_limit)

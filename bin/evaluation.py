@@ -119,6 +119,9 @@ def F_by_ids(ids, labels):
         precision += (right_num / float(sample_num)) / math.log(2.0 + pos)
     recall = float(right_label_num) / all_marked_label_num
 
+    f = (precision * recall) / (precision + recall)
+
     LogUtil.log('INFO', 'precision=%s, recall=%s, f=%s' % (str(precision),
                                                            str(recall),
-                                                           str((precision * recall) / (precision + recall))))
+                                                           str(f)))
+    return f

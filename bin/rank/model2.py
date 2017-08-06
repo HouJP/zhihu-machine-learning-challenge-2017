@@ -56,11 +56,13 @@ def train(config, argv):
     topic_feature_names = config.get('RANK', 'topic_features').split()
     topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in topic_feature_names]
 
+    all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if '' != fn.strip()]
+
     # pair_feature_names = config.get('RANK', 'pair_features').split()
 
     # load feature matrix
     offline_features = Feature.load_all(config.get('DIRECTORY', 'dataset_pt'),
-                                        model_feature_names + instance_feature_names + topic_feature_names,
+                                        all_feature_names,
                                         'offline',
                                         False)
 

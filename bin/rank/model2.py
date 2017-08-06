@@ -112,7 +112,7 @@ def train(config, argv):
     dvalid = xgb.DMatrix(valid_features, label=valid_labels)
     dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
-    model1 = fit_model(config, dtrain, dvalid, num_instance, rank_valid_indexs)
+    model1 = fit_model(config, dtrain, dvalid, rank_valid_indexs)
 
     # generate indexs
     rank_train_indexs = rank_p2_indexs + rank_p3_indexs
@@ -128,7 +128,7 @@ def train(config, argv):
     dvalid = xgb.DMatrix(valid_features, label=valid_labels)
     dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
-    model2 = fit_model(config, dtrain, dvalid, num_instance, rank_valid_indexs)
+    model2 = fit_model(config, dtrain, dvalid, rank_valid_indexs)
 
     # generate indexs
     rank_train_indexs = rank_p3_indexs + rank_p1_indexs
@@ -144,7 +144,7 @@ def train(config, argv):
     dvalid = xgb.DMatrix(valid_features, label=valid_labels)
     dvalid.set_group([vote_k] * (len(valid_labels) / vote_k))
 
-    model3 = fit_model(config, dtrain, dvalid, num_instance, rank_valid_indexs)
+    model3 = fit_model(config, dtrain, dvalid, rank_valid_indexs)
 
 def fit_model(config, dtrain, dvalid, rank_valid_indexs):
     vote_feature_names = config.get('RANK', 'vote_features').split()
@@ -211,13 +211,46 @@ def train_online(config, argv):
     predict_online(model, params['num_round'])
 
 
-def predict_online(model, best_ntree_limit):
-    run_id = config.get('RANK', 'rank_id')
+def predict_online(model1, model2, model3):
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
 
-    dtest_fp = stand_path('%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'dmatrix', run_id, 'online'))
-    group_test_fp = '%s/rank_%s_%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'group', run_id, 'online')
-    dtest = xgb.DMatrix(dtest_fp)
-    dtest.set_group(DataUtil.load_vector(group_test_fp, 'int'))
+    # load feture names
+    model_feature_names = config.get('RANK', 'model_features').split()
+    model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           model_feature_names]
+
+    instance_feature_names = config.get('RANK', 'instance_features').split()
+    instance_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                              instance_feature_names]
+
+    topic_feature_names = config.get('RANK', 'topic_features').split()
+    topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           topic_feature_names]
+
+    all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
+                         '' != fn.strip()]
+
+    # pair_feature_names = config.get('RANK', 'pair_features').split()
+
+    # load feature matrix
+    online_features = Feature.load_all(config.get('DIRECTORY', 'dataset_pt'),
+                                        all_feature_names,
+                                        'online',
+                                        False)
+
+    # load labels
+    online_labels_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (config.get('DIRECTORY', 'label_pt'),
+                                                                     vote_k,
+                                                                     vote_k_label_file_name,
+                                                                     'online')
+    online_labels = DataUtil.load_vector(online_labels_file_path, 'int')
+
+    test_features, test_labels, _ = Runner._generate_data(range(len(online_labels)), online_labels, online_features, -1)
+
+    dtest = xgb.DMatrix(test_features, label=test_labels)
+    dtest.set_group([vote_k] * (len(test_labels) / vote_k))
 
     # make prediction
     topk = config.getint('RANK', 'topk')

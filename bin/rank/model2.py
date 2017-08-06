@@ -62,7 +62,7 @@ def train(config, argv):
     vote_k = config.getint('RANK', 'vote_k')
 
     # load feture names
-    model_feature_names = config.get('RANK', 'model_features').split()
+    model_feature_names = list(set(config.get('RANK', 'model_features').split()))
     model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in model_feature_names]
 
     instance_feature_names = config.get('RANK', 'instance_features').split()
@@ -225,7 +225,7 @@ def predict_online(config, model1, model2, model3):
     version_id = config.getint('RANK', 'version_id')
 
     # load feture names
-    model_feature_names = config.get('RANK', 'model_features').split()
+    model_feature_names = list(set(config.get('RANK', 'model_features').split()))
     model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
                            model_feature_names]
 

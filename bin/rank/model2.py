@@ -52,7 +52,7 @@ def self_define_f(preds, dtrain):
         preds_ids.append(
             [kv[0] for kv in sorted(enumerate(preds[i]), key=lambda x: x[1], reverse=True)])
 
-    return -1. * F_by_ids(preds_ids, labels)
+    return 'oppsite_f', -1. * F_by_ids(preds_ids, labels)
 
 
 def train(config, argv):

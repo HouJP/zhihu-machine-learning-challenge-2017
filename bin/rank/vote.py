@@ -6,11 +6,32 @@
 
 
 import sys
+import os
 import ConfigParser
 import hashlib
 from ..text_cnn.data_helpers import parse_feature_vec
 from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
+
+
+def find_feature_file(model_name, data_name):
+    RootDir = ['/mnt/disk2/xinyu/data/dataset/', '/home/xinyu/zhihu_preds/from_124/']
+    RootDir.append('/mnt/disk2/xinyu/niuox_data/RCNN/')
+
+    model_name = model_name.strip().strip('\n')
+    if len(model_name) == 0 or model_name[0] == '#':
+        return ''
+
+    FileTemp = ''
+    for rd in RootDir:
+        if os.path.isfile('%s/%s.%s.csv' % (rd, model_name, data_name)):
+            FileTemp = '%s/%s.%s.csv' % (rd, model_name, data_name)
+            break
+        elif os.path.isfile('%s/%s.%s.preds' % (rd, model_name, data_name)):
+            FileTemp = '%s/%s.%s.preds' % (rd, model_name, data_name)
+            break
+
+    return FileTemp
 
 
 def vote(config, argv):
@@ -22,7 +43,7 @@ def vote(config, argv):
     vote_k = config.getint('RANK', 'vote_k')
 
     vote_feature_names = config.get('RANK', 'vote_features').split()
-    vote_feature_files = [open('%s/%s.%s.csv' % (dataset_pt, fn, data_name), 'r') for fn in vote_feature_names]
+    vote_feature_files = [open(find_feature_file(fn, data_name), 'r') for fn in vote_feature_names]
 
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k_label_file = open('%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, data_name), 'w')

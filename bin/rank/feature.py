@@ -29,6 +29,7 @@ def generate_featwheel_feature_from_model(config, argv):
     # load model features
     feature_names = config.get('RANK', 'model_features').split()
     feature_names = [find_feature_file(fn, data_name) for fn in feature_names]
+    feature_names = [fn for fn in feature_names if len(fn) > 0]
     for feature_name in feature_names:
         LogUtil.log('INFO', 'model_feature=%s' % feature_name)
 

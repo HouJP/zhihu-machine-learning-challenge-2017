@@ -12,6 +12,7 @@ import itertools
 from ..utils import DataUtil, LogUtil
 from os.path import isfile
 from ..featwheel.feature import Feature
+from vote import find_feature_file
 
 
 def generate_featwheel_feature_from_model(config, argv):
@@ -27,6 +28,7 @@ def generate_featwheel_feature_from_model(config, argv):
 
     # load model features
     feature_names = config.get('RANK', 'model_features').split()
+    feature_names = [find_feature_file(fn, data_name) for fn in feature_names]
     for feature_name in feature_names:
         LogUtil.log('INFO', 'model_feature=%s' % feature_name)
 

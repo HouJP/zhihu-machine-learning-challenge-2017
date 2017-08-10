@@ -19,19 +19,17 @@ def find_feature_file(model_name, data_name):
     RootDir.append('/mnt/disk2/xinyu/niuox_data/RCNN/')
 
     model_name = model_name.strip().strip('\n')
-    if len(model_name) == 0 or model_name[0] == '#':
-        return ''
-
     FileTemp = ''
-    for rd in RootDir:
-        if os.path.isfile('%s/%s.%s.csv' % (rd, model_name, data_name)):
-            FileTemp = '%s/%s.%s.csv' % (rd, model_name, data_name)
-            break
-        elif os.path.isfile('%s/%s.%s.preds' % (rd, model_name, data_name)):
-            FileTemp = '%s/%s.%s.preds' % (rd, model_name, data_name)
-            break
-        else:
-            LogUtil.log('INFO', 'can\'t find %s' % model_name)
+    if len(model_name) != 0 and model_name[0] != '#':
+        for rd in RootDir:
+            if os.path.isfile('%s/%s.%s.csv' % (rd, model_name, data_name)):
+                FileTemp = '%s/%s.%s.csv' % (rd, model_name, data_name)
+                break
+            elif os.path.isfile('%s/%s.%s.preds' % (rd, model_name, data_name)):
+                FileTemp = '%s/%s.%s.preds' % (rd, model_name, data_name)
+                break
+    if '' == FileTemp:
+        LogUtil.log('INFO', 'can\'t find %s' % model_name)
 
     return FileTemp
 

@@ -9,10 +9,30 @@ import sys
 import ConfigParser
 import hashlib
 import itertools
+import os
 from ..utils import DataUtil, LogUtil
 from os.path import isfile
 from ..featwheel.feature import Feature
-from vote import find_feature_file
+
+
+def find_model_feature_file(model_name, data_name):
+    RootDir = ['/mnt/disk2/xinyu/data/dataset/', '/home/xinyu/zhihu_preds/from_124/']
+    RootDir.append('/mnt/disk2/xinyu/niuox_data/RCNN/')
+
+    model_name = model_name.strip().strip('\n')
+    FileTemp = ''
+    if len(model_name) != 0 and model_name[0] != '#':
+        for rd in RootDir:
+            if os.path.isfile('%s/%s.%s.csv' % (rd, model_name, data_name)):
+                FileTemp = '%s/%s.%s.csv' % (rd, model_name, data_name)
+                break
+            elif os.path.isfile('%s/%s.%s.preds' % (rd, model_name, data_name)):
+                FileTemp = '%s/%s.%s.preds' % (rd, model_name, data_name)
+                break
+    if '' == FileTemp:
+        LogUtil.log('INFO', 'can\'t find %s' % model_name)
+
+    return FileTemp, model_name
 
 
 def generate_featwheel_feature_from_model(config, argv):
@@ -27,10 +47,15 @@ def generate_featwheel_feature_from_model(config, argv):
     vote_k_label = DataUtil.load_matrix(vote_k_label_file_path, 'int')
 
     # load model features
-    feature_names = config.get('RANK', 'model_features').split()
-    feature_names = [find_feature_file(fn, data_name) for fn in feature_names]
-    feature_names = [fn for fn in feature_names if len(fn) > 0]
-    for feature_name in feature_names:
+    feature_raw_names = config.get('RANK', 'model_features').split()
+    feature_names = list()
+    feature_fps = list()
+    for feature_raw_name in feature_raw_names:
+        fp, fn = find_model_feature_file(feature_raw_name, data_name)
+        if 0 < len(fp):
+            feature_names.append(fn)
+            feature_fps.append(fp)
+    for fid, feature_name in enumerate(feature_names):
         LogUtil.log('INFO', 'model_feature=%s' % feature_name)
 
         featwheel_feature_file_path = '%s/featwheel_vote_%d_%s_%s.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'),
@@ -44,7 +69,7 @@ def generate_featwheel_feature_from_model(config, argv):
             LogUtil.log('INFO', 'has featwheel features, JUMP')
             continue
 
-        features = DataUtil.load_matrix('%s/%s.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), feature_name, data_name), 'float')
+        features = DataUtil.load_matrix(feature_fps[fid], 'float')
         assert len(vote_k_label) == len(features)
 
         featwheel_feature_file = open(featwheel_feature_file_path, 'w')

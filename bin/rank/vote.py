@@ -14,7 +14,7 @@ from ..utils import DataUtil, LogUtil
 from ..text_cnn.data_helpers import load_labels_from_file
 
 
-def find_feature_file(model_name, data_name):
+def find_vote_feature_file(model_name, data_name):
     RootDir = ['/mnt/disk2/xinyu/data/dataset/', '/home/xinyu/zhihu_preds/from_124/']
     RootDir.append('/mnt/disk2/xinyu/niuox_data/RCNN/')
 
@@ -43,7 +43,7 @@ def vote(config, argv):
     vote_k = config.getint('RANK', 'vote_k')
 
     vote_feature_names = config.get('RANK', 'vote_features').split()
-    vote_feature_files = [find_feature_file(fn, data_name) for fn in vote_feature_names]
+    vote_feature_files = [find_vote_feature_file(fn, data_name) for fn in vote_feature_names]
     vote_feature_files = [open(fn, 'r') for fn in vote_feature_files if len(fn) > 0]
 
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()

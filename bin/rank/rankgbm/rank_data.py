@@ -110,7 +110,7 @@ def save_rank(config, labels, features, data_name):
     f = open(file_path, 'w')
     for lid in range(len(labels)):
         f.write('%d qid:%d %s\n' % (labels[lid], lid / vote_k, ' '.join(
-            ['%d:%d' % (kv[0], kv[1]) for kv in enumerate(features[lid].toarray().tolist()[0])])))
+            ['%d:%s' % (kv[0], kv[1]) for kv in enumerate(features[lid].toarray().tolist()[0])])))
     f.close()
 
 

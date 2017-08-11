@@ -33,7 +33,7 @@ def load_rank_file(file_path):
             fvalue = float(v)
             while (len(features) < fid):
                 features.append(0.0)
-            features[fid - 1] = fvalue
+            features[fid] = fvalue
         instances.append([rank, qid, features])
     file.close()
     LogUtil.log("INFO", "load rank file done. N(instances)=%d" % (len(instances)))

@@ -119,5 +119,5 @@ if __name__ == "__main__":
     func = sys.argv[2]
     argv = sys.argv[3:]
 
-    params = {'n_round' : 10, 'max_depth' : 7, 'max_features' : "auto", 'min_samples_leaf' : 0.025, 'learn_rate' : 1.0, 'silent' : False}
+    params = {'n_round' : 100, 'max_depth' : 8, 'max_features' : 0.6, 'min_samples_leaf' : 70, 'learn_rate' : 0.2, 'silent' : False}
     train(config, params)

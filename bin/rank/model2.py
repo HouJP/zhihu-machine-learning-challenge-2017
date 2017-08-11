@@ -61,6 +61,20 @@ def train(config, argv):
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
 
+    # load rank train + valid dataset index
+    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                              config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
+    valid_index = [num - 1 for num in valid_index]
+
+    # load topk ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
+
+    # load labels
+    all_valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()
+
     # load feture names
     model_feature_names = list(set(config.get('RANK', 'model_features').split()))
     model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in model_feature_names]
@@ -119,6 +133,18 @@ def train(config, argv):
 
     valid_preds1, model1 = fit_model(config, dtrain, dvalid)
 
+    preds_ids1 = list()
+    vote_k_label1 = [vote_k_label[iid] for iid in ins_p3_indexs]
+    for i in range(len(vote_k_label1)):
+        preds_ids1.append(
+            [kv[0] for kv in sorted(zip(vote_k_label1[i], valid_preds1[i]), key=lambda x: x[1], reverse=True)])
+    valid_labels1 = [all_valid_labels[iid] for iid in ins_p3_indexs]
+
+    LogUtil.log('INFO', '------------ fold1 score ---------------')
+    F_by_ids(preds_ids1, valid_labels1)
+
+    # ========================= fold 2 =========================================
+
     # generate indexs
     rank_train_indexs = rank_p2_indexs + rank_p3_indexs
     rank_valid_indexs = rank_p1_indexs
@@ -153,27 +179,15 @@ def train(config, argv):
 
     valid_preds = valid_preds2 + valid_preds3 + valid_preds1
 
-    # load valid dataset index
-    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
-                                              config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
-    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
-    valid_index = [num - 1 for num in valid_index]
-
-    # load labels
-    valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()
-
-    # load topk ids
-    index_pt = config.get('DIRECTORY', 'index_pt')
-    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
-    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
-
     preds_ids = list()
     for i in range(len(vote_k_label)):
         preds_ids.append(
             [kv[0] for kv in sorted(zip(vote_k_label[i], valid_preds[i]), key=lambda x: x[1], reverse=True)])
 
-    F_by_ids(vote_k_label, valid_labels)
-    F_by_ids(preds_ids, valid_labels)
+    LogUtil.log('INFO', '------------ vote score ---------------')
+    F_by_ids(vote_k_label, all_valid_labels)
+    LogUtil.log('INFO', '------------ rank score ---------------')
+    F_by_ids(preds_ids, all_valid_labels)
 
     predict_online(config, model1, model2, model3)
 

@@ -31,7 +31,7 @@ def load_rank_file(file_path):
             [k, v] = subs[i].split(':')
             fid = int(k)
             fvalue = float(v)
-            while (len(features) < fid):
+            while len(features) <= fid:
                 features.append(0.0)
             features[fid] = fvalue
         instances.append([rank, qid, features])

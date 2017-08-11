@@ -99,6 +99,7 @@ def train(config, params):
     rank_gbm.fit(train_instances, {"vali": valid_instances})
     # 对预测数据进行预测
     valid_preds1 = rank_gbm.predict(valid_Xs)
+    valid_preds1 = zip(*[iter(valid_preds1)] * vote_k)
 
     preds_ids1 = list()
     vote_k_label1 = [vote_k_label[iid] for iid in ins_p3_indexs]

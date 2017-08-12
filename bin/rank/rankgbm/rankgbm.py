@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#! /usr/bin/python
+# ! /usr/bin/python
 
 import sys
 
@@ -7,7 +7,7 @@ reload(sys)
 sys.path.append("..")
 sys.setdefaultencoding('utf-8')
 
-import numpy as np  
+import numpy as np
 import json
 import math
 from sklearn.tree import DecisionTreeRegressor
@@ -17,6 +17,8 @@ from sklearn import linear_model
 from ...utils import LogUtil
 from rankevaluation import RankEvaluation
 from ...evaluation import F_by_ids
+import json
+from sklearn.externals import joblib
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -35,13 +37,13 @@ def self_define_f(preds, labels, vote_k):
 
 
 class RankGBM(object):
-
-    def __init__(self, vote_k, n_round = 100, max_depth = 5, max_features = "auto", min_samples_leaf = 0.025, learn_rate = 0.2, silent = True):
+    def __init__(self, vote_k, n_round=100, max_depth=5, max_features="auto", min_samples_leaf=0.025, learn_rate=0.2,
+                 silent=True):
         '''
         初始化模型参数
         '''
-        LogUtil.log("INFO", "n_round=%d, max_depth=%d, max_features=%s, min_samples_leaf=%f, learn_rate=%f, silent=%d" 
-            % (n_round, max_depth, max_features, min_samples_leaf, learn_rate, silent))
+        LogUtil.log("INFO", "n_round=%d, max_depth=%d, max_features=%s, min_samples_leaf=%f, learn_rate=%f, silent=%d"
+                    % (n_round, max_depth, max_features, min_samples_leaf, learn_rate, silent))
         # gradient boosting machine参数
         self.n_round = n_round
         # weak learner(决策树)参数
@@ -69,26 +71,27 @@ class RankGBM(object):
         del self.weak_learners[:]
         # 获取数据信息
         self.n_instances = len(instances)
-        self.qids = list(set([ instance[1] for instance in instances ]))
+        self.qids = list(set([instance[1] for instance in instances]))
         self.n_qids = len(self.qids)
         self.qid2did = self.build_qid2did(instances)
         self.coefficient_vec = self.build_coefficient_vector(self.qid2did, instances)
         LogUtil.log("INFO", "n_instances=%d, n_qids=%d" % (self.n_instances, self.n_qids))
 
         # 生成特征矩阵
-        Xs = np.array([ instances[i][2] for i in range (self.n_instances)])
+        Xs = np.array([instances[i][2] for i in range(self.n_instances)])
         # 生成预测矩阵
-        fs = [ 0.0 for i in range(self.n_instances) ]
+        fs = [0.0 for i in range(self.n_instances)]
         # 生成残差矩阵
-        gs = [ 0.0 for i in range(self.n_instances) ]
+        gs = [0.0 for i in range(self.n_instances)]
         # 监视窗口生成特征矩阵
         watch_window_Xs = {}
         for dataset_name in watch_window:
-            watch_window_Xs[dataset_name] = np.array( [ watch_window[dataset_name][i][2] for i in range(len(watch_window[dataset_name])) ])
+            watch_window_Xs[dataset_name] = np.array(
+                [watch_window[dataset_name][i][2] for i in range(len(watch_window[dataset_name]))])
         # 监视窗口生成预测矩阵
         watch_window_fs = {}
         for dataset_name in watch_window:
-            watch_window_fs[dataset_name] = [ 0.0 for i in range(len(watch_window[dataset_name])) ]
+            watch_window_fs[dataset_name] = [0.0 for i in range(len(watch_window[dataset_name]))]
         # 监视窗口生成映射：<qid, dids>
         watch_window_qid2did = {}
         for dataset_name in watch_window:
@@ -96,22 +99,24 @@ class RankGBM(object):
         # 监视窗口生成标签向量
         watch_window_label = {}
         for dataset_name in watch_window:
-            watch_window_label[dataset_name] = [ watch_window[dataset_name][i][0] for i in range(len(watch_window[dataset_name])) ]
+            watch_window_label[dataset_name] = [watch_window[dataset_name][i][0] for i in
+                                                range(len(watch_window[dataset_name]))]
 
         # Early Stop监视
         best_iter = 0
         best_em = 0.0
         best_vali_map = 0.0
         best_vali_ndcg10 = 0.0
+        best_f = 0.0
 
         # 迭代拟合
         for iter in range(self.n_round):
             self.calculate_gradient_npos(instances, fs, gs)
             # 拟合单个weak learner
             neg_gradient = np.array([-1.0 * gs[did] for did in range(self.n_instances)])
-            wl = DecisionTreeRegressor(max_depth = self.max_depth,  
-                max_features = self.max_features, 
-                min_samples_leaf = self.min_samples_leaf)
+            wl = DecisionTreeRegressor(max_depth=self.max_depth,
+                                       max_features=self.max_features,
+                                       min_samples_leaf=self.min_samples_leaf)
             wl.fit(Xs, neg_gradient)
             # 记录模型
             self.weak_learners.append(wl)
@@ -127,22 +132,25 @@ class RankGBM(object):
                     watch_window_fs[dataset_name][did] += self.learn_rate * ww_ps[did]
 
             vali_map = RankEvaluation.map(watch_window['vali'], watch_window_fs['vali'], watch_window_qid2did['vali'])
-            vali_ndcg10 = RankEvaluation.ave_ndcg(watch_window['vali'], watch_window_fs['vali'], watch_window_qid2did['vali'], 10)
+            vali_ndcg10 = RankEvaluation.ave_ndcg(watch_window['vali'], watch_window_fs['vali'],
+                                                  watch_window_qid2did['vali'], 10)
             valid_f = self_define_f(watch_window_fs['vali'], watch_window_label['vali'], self.vote_k)
-            LogUtil.log("INFO", "vali\tMAP(%.4f)\tNDCG@10(%.4f)" % (vali_map, vali_ndcg10))
+            LogUtil.log("INFO", "vali\tMAP(%.4f)\tNDCG@10(%.4f)\tF(%.4f)" % (vali_map, vali_ndcg10, valid_f))
             # Early Stop逻辑
             if (vali_map + vali_ndcg10 > best_em):
                 best_em = vali_map + vali_ndcg10
                 best_iter = iter
                 best_vali_map = vali_map
                 best_vali_ndcg10 = vali_ndcg10
+                best_f = valid_f
             elif (iter - best_iter >= 100):
                 break
         self.n_round = best_iter + 1
 
-        LogUtil.log("INFO", "rank gradient boosting machine done, n_round=%d, max_depth=%d, max_features=%s, min_samples_leaf=%f, learn_rate=%f" 
-            % (self.n_round, self.max_depth, self.max_features, self.min_samples_leaf, self.learn_rate))
-        LogUtil.log("INFO", "vali\tMAP(%.4f)\tNDCG@10(%.4f)" % (best_vali_map, best_vali_ndcg10))
+        LogUtil.log("INFO",
+                    "rank gradient boosting machine done, n_round=%d, max_depth=%d, max_features=%s, min_samples_leaf=%f, learn_rate=%f"
+                    % (self.n_round, self.max_depth, self.max_features, self.min_samples_leaf, self.learn_rate))
+        LogUtil.log("INFO", "vali\tMAP(%.4f)\tNDCG@10(%.4f)\tF(%.4f)" % (best_vali_map, best_vali_ndcg10, best_f))
         return
 
     def calculate_gradient_npos(self, instances, fs, gs):
@@ -176,10 +184,10 @@ class RankGBM(object):
             dids_fss = {}
             for did_pair in dids:
                 dids_fss[did_pair] = fs[did_pair]
-            dids_fss_sorted = sorted(dids_fss.iteritems(), key=lambda d:d[1], reverse = True)
+            dids_fss_sorted = sorted(dids_fss.iteritems(), key=lambda d: d[1], reverse=True)
             dids_poss = {}
             for pos_id in range(len(dids_fss_sorted)):
-                dids_poss[dids_fss_sorted[pos_id][0]] = pos_id + 1 
+                dids_poss[dids_fss_sorted[pos_id][0]] = pos_id + 1
 
             for did_pair in dids:
                 rank_pair = instances[did_pair][0]
@@ -190,7 +198,7 @@ class RankGBM(object):
                     exp_diff = -1.0 * math.pow(math.e, fs[did_pair] - fs[did])
                 max_pos = max(dids_poss[did_pair], dids_poss[did_pair])
                 exp_sum += exp_diff / math.log(1 + max_pos, 2)
-            gs[did] = 0.5 * self.coefficient_vec[qid] * exp_sum 
+            gs[did] = 0.5 * self.coefficient_vec[qid] * exp_sum
         return
 
     def build_qid2did(self, instances):
@@ -227,14 +235,11 @@ class RankGBM(object):
             coefficient_vec[qid] = 1.0 / (coefficient_vec[qid] + 1.0)
         return coefficient_vec
 
-
-
-
     def predict(self, Xs):
         '''
         根据rank gradient boosting machine 模型进行预测
         '''
-        fs = [ 0.0 for i in range(len(Xs)) ]
+        fs = [0.0 for i in range(len(Xs))]
         for iter in range(self.n_round):
             # 利用单个模型进行预测
             ps = self.weak_learners[iter].predict(Xs)
@@ -243,5 +248,38 @@ class RankGBM(object):
         LogUtil.log("INFO", "rank gradient boost predict done.")
         return fs
 
+    def save(self, file_path):
+        params = dict()
+        params['max_depth'] = self.max_depth
+        params['max_features'] = self.max_features
+        params['min_samples_leaf'] = self.min_samples_leaf
+        params['learn_rate'] = self.learn_rate
+        params['n_round'] = self.n_round
+        params['vote_k'] = self.vote_k
 
+        with open(file_path + '.params', 'w') as params_file:
+            json.dump(params, params_file)
 
+        for wl_id, wl in enumerate(self.weak_learners):
+            joblib.dump(self.weak_learners[wl_id], file_path + '.wl%d' % wl_id)
+
+    @staticmethod
+    def load(file_path):
+        params = json.load(file_path + '.params')
+
+        weak_learners = list()
+        for wl_id in range(params['n_round']):
+            wl = DecisionTreeRegressor(max_depth=params.max_depth,
+                                       max_features=params.max_features,
+                                       min_samples_leaf=params.min_samples_leaf)
+            weak_learners.append(wl)
+
+        rankgbm = RankGBM(params['vote_k'],
+                          n_round=params['n_round'],
+                          max_depth=params['max_depth'],
+                          max_features=params['max_features'],
+                          min_samples_leaf=params['min_samples_leaf'],
+                          learn_rate=params['learn_rate'])
+        rankgbm.weak_learners = weak_learners
+
+        return rankgbm

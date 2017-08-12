@@ -15,7 +15,7 @@ from ...featwheel.feature import Feature
 from ...featwheel.runner import Runner
 
 
-def generate(config, argv):
+def generate_offline(config, argv):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')

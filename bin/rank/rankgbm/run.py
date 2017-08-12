@@ -15,6 +15,29 @@ from ...text_cnn.data_helpers import load_labels_from_file
 from ...evaluation import F_by_ids
 import hashlib
 from rankgbm import RankGBM
+import time
+import os
+
+
+def init_out_dir(config, out_tag):
+    # generate output tag
+    # out_tag = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
+    config.set('DIRECTORY', 'out_tag', str(out_tag))
+    # generate output directory
+    out_pt = config.get('DIRECTORY', 'out_pt')
+    out_pt_exists = os.path.exists(out_pt)
+    if out_pt_exists:
+        LogUtil.log("ERROR", 'out path (%s) already exists ' % out_pt)
+        raise Exception
+    else:
+        os.mkdir(out_pt)
+        os.mkdir(config.get('DIRECTORY', 'pred_pt'))
+        os.mkdir(config.get('DIRECTORY', 'model_pt'))
+        os.mkdir(config.get('DIRECTORY', 'conf_pt'))
+        os.mkdir(config.get('DIRECTORY', 'score_pt'))
+        LogUtil.log('INFO', 'out path (%s) created ' % out_pt)
+    # save config
+    config.write(open(config.get('DIRECTORY', 'conf_pt') + 'featwheel.conf', 'w'))
 
 
 def load_rank_file(file_path):
@@ -46,6 +69,8 @@ def load_rank_file(file_path):
 
 def train(config, params, argv):
     fold_id = int(argv[0])
+    out_tag = argv[1]
+    init_out_dir(config, out_tag)
     '''
     针对`target_param`进行grid_search
     '''
@@ -119,8 +144,11 @@ def train(config, params, argv):
             [kv[0] for kv in sorted(zip(valid_vote_k_label[i], valid_preds[i]), key=lambda x: x[1], reverse=True)])
     valid_labels = [all_valid_labels[iid] for iid in ins_indexs]
 
-    LogUtil.log('INFO', '------------ fold1 score ---------------')
+    LogUtil.log('INFO', '------------ fold score ---------------')
     F_by_ids(valid_preds_ids, valid_labels)
+
+    model_file_path = config.get('DIRECTORY', 'model_pt') + '/rankgbm_fold%d' % fold_id
+    rank_gbm.save(model_file_path)
 
 
 if __name__ == "__main__":
@@ -130,6 +158,6 @@ if __name__ == "__main__":
     func = sys.argv[2]
     argv = sys.argv[3:]
 
-    params = {'n_round': 100, 'max_depth': 8, 'max_features': 0.6, 'min_samples_leaf': 70, 'learn_rate': 0.2,
+    params = {'n_round': 1, 'max_depth': 8, 'max_features': 0.6, 'min_samples_leaf': 70, 'learn_rate': 0.2,
               'silent': False}
     train(config, params, argv)

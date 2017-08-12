@@ -67,7 +67,7 @@ def load_rank_file(file_path):
     return instances
 
 
-def train(config, params, argv):
+def train(config, argv):
     fold_id = int(argv[0])
     out_tag = argv[1]
     init_out_dir(config, out_tag)
@@ -117,12 +117,11 @@ def train(config, params, argv):
 
     # 训练模型
     rank_gbm = RankGBM(vote_k,
-                       n_round=params['n_round'],
-                       max_depth=params['max_depth'],
-                       max_features=params['max_features'],
-                       min_samples_leaf=params['min_samples_leaf'],
-                       learn_rate=params['learn_rate'],
-                       silent=params['silent'])
+                       n_round=config.getint('RANK_GBM', 'n_round'),
+                       max_depth=config.getint('RANK_GBM', 'max_depth'),
+                       max_features=float(config.get('RANK_GBM', 'max_features')),
+                       min_samples_leaf=config.getint('RANK_GBM', 'min_samples_leaf'),
+                       learn_rate=float(config.get('RANK_GBM', 'learn_rate')))
     rank_gbm.fit(train_instances, {"vali": valid_instances})
     # 对预测数据进行预测
     valid_preds = rank_gbm.predict(valid_Xs)
@@ -158,6 +157,4 @@ if __name__ == "__main__":
     func = sys.argv[2]
     argv = sys.argv[3:]
 
-    params = {'n_round': 1, 'max_depth': 8, 'max_features': 0.6, 'min_samples_leaf': 70, 'learn_rate': 0.2,
-              'silent': False}
-    train(config, params, argv)
+    eval(func)(config, argv)

@@ -131,19 +131,21 @@ class RankGBM(object):
                 for did in range(len(ww_ps)):
                     watch_window_fs[dataset_name][did] += self.learn_rate * ww_ps[did]
 
-            vali_map = RankEvaluation.map(watch_window['vali'], watch_window_fs['vali'], watch_window_qid2did['vali'])
-            vali_ndcg10 = RankEvaluation.ave_ndcg(watch_window['vali'], watch_window_fs['vali'],
-                                                  watch_window_qid2did['vali'], 10)
+            # vali_map = RankEvaluation.map(watch_window['vali'], watch_window_fs['vali'], watch_window_qid2did['vali'])
+            # vali_ndcg10 = RankEvaluation.ave_ndcg(watch_window['vali'], watch_window_fs['vali'],
+            #                                       watch_window_qid2did['vali'], 10)
+            vali_map = -1.
+            vali_ndcg10 = -1.
             valid_f = self_define_f(watch_window_fs['vali'], watch_window_label['vali'], self.vote_k)
             LogUtil.log("INFO", "vali\tMAP(%.4f)\tNDCG@10(%.4f)\tF(%.4f)" % (vali_map, vali_ndcg10, valid_f))
             # Early Stop逻辑
-            if (vali_map + vali_ndcg10 > best_em):
-                best_em = vali_map + vali_ndcg10
+            if valid_f > best_em:
+                best_em = valid_f
                 best_iter = iter
                 best_vali_map = vali_map
                 best_vali_ndcg10 = vali_ndcg10
                 best_f = valid_f
-            elif (iter - best_iter >= 100):
+            elif iter - best_iter >= 100:
                 break
         self.n_round = best_iter + 1
 

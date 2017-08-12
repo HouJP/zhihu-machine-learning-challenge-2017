@@ -267,7 +267,8 @@ class RankGBM(object):
 
     @staticmethod
     def load(file_path):
-        params = json.load(file_path + '.params')
+        with open(file_path + '.params', 'r') as params_file:
+            params = json.load(params_file)
 
         weak_learners = list()
         for wl_id in range(params['n_round']):

@@ -41,7 +41,8 @@ def generate_idf(config, argv):
         word_idf[word] = math.log(num_docs / (word_idf[word] + 1.)) / math.log(2.)
 
     word_idf_fp = '%s/words.idf' % config.get('DIRECTORY', 'devel_pt')
-    json.dump(word_idf, word_idf_fp)
+    with open(word_idf_fp, 'w') as word_idf_f:
+        json.dump(word_idf, word_idf_f)
 
     LogUtil.log("INFO", "word_idf calculation done, len(word_idf)=%d" % len(word_idf))
 
@@ -65,7 +66,8 @@ def generate_idf(config, argv):
         char_idf[char] = math.log(num_docs / (char_idf[char] + 1.)) / math.log(2.)
 
     char_idf_fp = '%s/chars.idf' % config.get('DIRECTORY', 'devel_pt')
-    json.dump(char_idf, char_idf_fp)
+    with open(char_idf_fp, 'w') as char_idf_f:
+        json.dump(char_idf, char_idf_f)
 
     LogUtil.log("INFO", "char_idf calculation done, len(char_idf)=%d" % len(char_idf))
 

@@ -169,6 +169,7 @@ def predict_online(config, models):
         valid_Xs = np.array([valid_instances[i][2] for i in range(len(valid_instances))])
         valid_preds[fold_id] = models[fold_id].predict(valid_Xs)
     valid_preds = valid_preds[1] + valid_preds[2] + valid_preds[0]
+    valid_preds = zip(*[iter(valid_preds)] * vote_k)
 
     # load rank train + valid dataset index
     valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),

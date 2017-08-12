@@ -16,7 +16,9 @@ from ..featwheel.feature import Feature
 
 
 def find_model_feature_file(model_name, data_name):
-    RootDir = ['/mnt/disk2/xinyu/data/dataset/', '/home/xinyu/zhihu_preds/from_124/']
+    RootDir = ['/mnt/disk2/xinyu/data/dataset/',
+               '/home/xinyu/zhihu_preds/from_124/',
+               '/mnt/disk3/xinyu/from_124/']
     RootDir.append('/mnt/disk2/xinyu/niuox_data/RCNN/')
 
     model_name = model_name.strip().strip('\n')

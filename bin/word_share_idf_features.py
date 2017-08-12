@@ -84,7 +84,7 @@ def generate(config, argv):
                 if word in topic_tw[tid] and len(word):
                     agg += word_idf[word]
             tw_features.append(agg)
-        pair_tws_idf_feature_file.write(','.join([str(num) for num in tw_features]))
+        pair_tws_idf_feature_file.write(','.join([str(num) for num in tw_features]) + '\n')
 
         dw_features = list()
         for tid in range(1999):
@@ -93,7 +93,7 @@ def generate(config, argv):
                 if word in topic_dw[tid] and len(word):
                     agg += word_idf[word]
             dw_features.append(agg)
-        pair_dws_idf_feature_f.write(','.join([str(num) for num in dw_features]))
+        pair_dws_idf_feature_f.write(','.join([str(num) for num in dw_features]) + '\n')
 
         if 0 == line_id % 10000:
             LogUtil.log('INFO', str(line_id))

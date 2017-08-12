@@ -105,10 +105,16 @@ def train(config, argv):
     vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
     vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
 
-    train_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold%d_train.rank' % fold_id
+    train_file_name = '%s/featwheel_vote_%d_%s.fold%d_train.rank' % (config.get('DIRECTORY', 'dataset_pt'),
+                                                                     vote_k,
+                                                                     vote_k_label_file_name,
+                                                                     fold_id)
     train_instances = load_rank_file(train_file_name)
 
-    valid_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold%d_valid.rank' % fold_id
+    valid_file_name = '%s/featwheel_vote_%d_%s.fold%d_valid.rank' % (config.get('DIRECTORY', 'dataset_pt'),
+                                                                     vote_k,
+                                                                     vote_k_label_file_name,
+                                                                     fold_id)
     valid_instances = load_rank_file(valid_file_name)
 
     valid_Xs = np.array([valid_instances[i][2] for i in range(len(valid_instances))])
@@ -197,9 +203,9 @@ def predict_online(config, models):
 
     valid_preds_file = open('%s/rank_id_score.validation.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id), 'w')
     for i in range(len(vote_k_label)):
-        valid_preds_file.write(','.join(['%s:%s' % (kv[0], kv[1]) for kv in zip(vote_k_label[i], valid_preds[i])]) + '\n')
+        valid_preds_file.write(
+            ','.join(['%s:%s' % (kv[0], kv[1]) for kv in zip(vote_k_label[i], valid_preds[i])]) + '\n')
     valid_preds_file.close()
-
 
     test_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.test.rank'
     test_instances = load_rank_file(test_file_name)
@@ -209,7 +215,8 @@ def predict_online(config, models):
     test_preds2 = models[1].predict(test_Xs)
     test_preds3 = models[2].predict(test_Xs)
 
-    test_preds = [(test_preds1[line_id] + test_preds2[line_id] + test_preds3[line_id]) / 3. for line_id in range(len(test_preds1))]
+    test_preds = [(test_preds1[line_id] + test_preds2[line_id] + test_preds3[line_id]) / 3. for line_id in
+                  range(len(test_preds1))]
     test_preds = zip(*[iter(test_preds)] * vote_k)
 
     # load topk ids
@@ -220,7 +227,8 @@ def predict_online(config, models):
 
     preds_ids = list()
     for i in range(len(vote_k_label)):
-        preds_ids.append([kv[0] for kv in sorted(zip(vote_k_label[i], test_preds[i]), key=lambda x:x[1], reverse=True)])
+        preds_ids.append(
+            [kv[0] for kv in sorted(zip(vote_k_label[i], test_preds[i]), key=lambda x: x[1], reverse=True)])
 
     # load question ID for online dataset
     qid_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'question_id')
@@ -274,6 +282,7 @@ def tmp(config, argv):
     for i in range(len(vote_k_label)):
         rank_submit_f.write(','.join(['%s:%s' % (kv[0], kv[1]) for kv in zip(vote_k_label[i], test_preds[i])]) + '\n')
     rank_submit_f.close()
+
 
 if __name__ == "__main__":
     config_fp = sys.argv[1]

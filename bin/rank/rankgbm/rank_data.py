@@ -151,10 +151,11 @@ def generate_online(config, argv):
     # pair_feature_names = config.get('RANK', 'pair_features').split()
 
     # load feature matrix
+    will_save = ('True' == config.get('RANK', 'will_save'))
     online_features = Feature.load_all(config.get('DIRECTORY', 'dataset_pt'),
                                        all_feature_names,
                                        'online',
-                                       False)
+                                       will_save)
 
     # load labels
     online_labels_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (config.get('DIRECTORY', 'label_pt'),

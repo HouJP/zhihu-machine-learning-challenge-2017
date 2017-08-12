@@ -63,7 +63,7 @@ def load_rank_file(file_path):
             features[fid] = fvalue
         instances.append([rank, qid, features])
     file.close()
-    LogUtil.log("INFO", "load rank file done. N(instances)=%d" % (len(instances)))
+    LogUtil.log("INFO", "load rank file done. N(instances)=%d, %s" % (len(instances), file_path))
     return instances
 
 

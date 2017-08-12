@@ -81,13 +81,43 @@ def generate(config, argv):
     rank_p2_indexs = [(num_p1 * vote_k + i) for i in range(num_p2 * vote_k)]
     rank_p3_indexs = [((num_p1 + num_p2) * vote_k + i) for i in range(num_p3 * vote_k)]
 
-    # ========================= fold 1 =========================================
+    # ========================= fold 0 =========================================
 
     fold_id = 0
 
     # generete indexs
     rank_train_indexs = rank_p1_indexs + rank_p2_indexs
     rank_valid_indexs = rank_p3_indexs
+
+    # generate DMatrix
+    train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
+    valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
+
+    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id)
+    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id)
+
+    # ========================= fold 1 =========================================
+
+    fold_id = 1
+
+    # generete indexs
+    rank_train_indexs = rank_p2_indexs + rank_p3_indexs
+    rank_valid_indexs = rank_p1_indexs
+
+    # generate DMatrix
+    train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
+    valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
+
+    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id)
+    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id)
+
+    # ========================= fold 2 =========================================
+
+    fold_id = 2
+
+    # generete indexs
+    rank_train_indexs = rank_p3_indexs + rank_p1_indexs
+    rank_valid_indexs = rank_p2_indexs
 
     # generate DMatrix
     train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)

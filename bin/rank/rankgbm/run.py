@@ -202,7 +202,7 @@ def predict_online(config, models):
     test_preds2 = models[1].predict(test_Xs)
     test_preds3 = models[2].predict(test_Xs)
 
-    test_preds = [test_preds1[line_id] + test_preds2[line_id] + test_preds3[line_id] for line_id in range(len(test_preds1))]
+    test_preds = [(test_preds1[line_id] + test_preds2[line_id] + test_preds3[line_id]) / 3. for line_id in range(len(test_preds1))]
     test_preds = zip(*[iter(test_preds)] * vote_k)
 
     # load topk ids

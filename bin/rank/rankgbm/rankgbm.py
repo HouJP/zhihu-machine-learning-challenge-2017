@@ -272,9 +272,10 @@ class RankGBM(object):
 
         weak_learners = list()
         for wl_id in range(params['n_round']):
-            wl = DecisionTreeRegressor(max_depth=params['max_depth'],
-                                       max_features=params['max_features'],
-                                       min_samples_leaf=params['min_samples_leaf'])
+            # wl = DecisionTreeRegressor(max_depth=params['max_depth'],
+            #                            max_features=params['max_features'],
+            #                            min_samples_leaf=params['min_samples_leaf'])
+            wl = joblib.load(file_path + '.wl%d' % wl_id)
             weak_learners.append(wl)
 
         rankgbm = RankGBM(params['vote_k'],

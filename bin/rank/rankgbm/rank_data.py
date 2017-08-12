@@ -127,6 +127,47 @@ def generate_offline(config, argv):
     save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id)
 
 
+def generate_online(config, argv):
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+
+    # load feture names
+    model_feature_names = list(set(config.get('RANK', 'model_features').split()))
+    model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           model_feature_names]
+
+    instance_feature_names = config.get('RANK', 'instance_features').split()
+    instance_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                              instance_feature_names]
+
+    topic_feature_names = config.get('RANK', 'topic_features').split()
+    topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           topic_feature_names]
+
+    all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
+                         '' != fn.strip()]
+
+    # pair_feature_names = config.get('RANK', 'pair_features').split()
+
+    # load feature matrix
+    online_features = Feature.load_all(config.get('DIRECTORY', 'dataset_pt'),
+                                       all_feature_names,
+                                       'online',
+                                       False)
+
+    # load labels
+    online_labels_file_path = '%s/featwheel_vote_%d_%s.%s.label' % (config.get('DIRECTORY', 'label_pt'),
+                                                                    vote_k,
+                                                                    vote_k_label_file_name,
+                                                                    'online')
+    online_labels = DataUtil.load_vector(online_labels_file_path, 'int')
+
+    test_features, test_labels, _ = Runner._generate_data(range(len(online_labels)), online_labels, online_features, -1)
+
+    save_rank(config, test_labels, test_features, 'test')
+
+
 def save_rank(config, labels, features, data_name):
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()

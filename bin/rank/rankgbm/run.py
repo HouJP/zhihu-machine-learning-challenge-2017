@@ -8,6 +8,7 @@ sys.path.append("..")
 sys.setdefaultencoding('utf-8')
 
 import numpy as np
+import json
 import ConfigParser
 import sys
 from ...utils import LogUtil, DataUtil
@@ -70,9 +71,7 @@ def train(config, argv):
     fold_id = int(argv[0])
     out_tag = argv[1]
     init_out_dir(config, out_tag)
-    '''
-    针对`target_param`进行grid_search
-    '''
+
     vote_feature_names = config.get('RANK', 'vote_features').split()
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
@@ -147,6 +146,108 @@ def train(config, argv):
 
     model_file_path = config.get('DIRECTORY', 'model_pt') + '/rankgbm_fold%d' % fold_id
     rank_gbm.save(model_file_path)
+
+
+def test(config, argv):
+    model0 = RankGBM.load(config.get('DIRECTORY', 'model_pt') + '/rankgbm_fold%d' % 0)
+    model1 = RankGBM.load(config.get('DIRECTORY', 'model_pt') + '/rankgbm_fold%d' % 1)
+    model2 = RankGBM.load(config.get('DIRECTORY', 'model_pt') + '/rankgbm_fold%d' % 2)
+    predict_online(config, [model0, model1, model2])
+
+
+def predict_online(config, models):
+    version_id = config.get('RANK', 'version_id')
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+
+    valid_preds = [0, 0, 0]
+    for fold_id in range(3):
+        valid_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold%d_valid.rank' % fold_id
+        valid_instances = load_rank_file(valid_file_name)
+
+        valid_Xs = np.array([valid_instances[i][2] for i in range(len(valid_instances))])
+        valid_preds[fold_id] = models[fold_id].predict(valid_Xs)
+    valid_preds = valid_preds[1] + valid_preds[2] + valid_preds[0]
+
+    # load rank train + valid dataset index
+    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                              config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
+    valid_index = [num - 1 for num in valid_index]
+
+    # load topk ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
+
+    # load labels
+    all_valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()
+
+    preds_ids = list()
+    for i in range(len(vote_k_label)):
+        preds_ids.append(
+            [kv[0] for kv in sorted(zip(vote_k_label[i], valid_preds[i]), key=lambda x: x[1], reverse=True)])
+
+    LogUtil.log('INFO', '------------ vote score ---------------')
+    F_by_ids(vote_k_label, all_valid_labels)
+    LogUtil.log('INFO', '------------ rank score ---------------')
+    F_by_ids(preds_ids, all_valid_labels)
+
+    test_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.test.rank'
+    test_instances = load_rank_file(test_file_name)
+    test_Xs = np.array([test_instances[i][2] for i in range(len(test_instances))])
+
+    test_preds1 = models[0].predict(test_Xs)
+    test_preds2 = models[1].predict(test_Xs)
+    test_preds3 = models[2].predict(test_Xs)
+
+    test_preds = [test_preds1[line_id] + test_preds2[line_id] + test_preds3[line_id] for line_id in range(len(test_preds1))]
+    test_preds = zip(*[iter(test_preds)] * vote_k)
+
+    # load topk ids
+    # load topk ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'online')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
+
+    preds_ids = list()
+    for i in range(len(vote_k_label)):
+        preds_ids.append([kv[0] for kv in sorted(zip(vote_k_label[i], test_preds[i]), key=lambda x:x[1], reverse=True)])
+
+    # load question ID for online dataset
+    qid_on_fp = '%s/%s.online.csv' % (config.get('DIRECTORY', 'dataset_pt'), 'question_id')
+    qid_on = DataUtil.load_vector(qid_on_fp, 'str')
+    LogUtil.log('INFO', 'load online question ID done')
+
+    # load hash table of label
+    id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
+    id2label = json.load(open(id2label_fp, 'r'))
+
+    rank_submit_fp = '%s/rank_submit.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
+    rank_submit_f = open(rank_submit_fp, 'w')
+    for line_id, p in enumerate(preds_ids):
+        label_sorted = [id2label[str(n)] for n in p[:5]]
+        rank_submit_f.write("%s,%s\n" % (qid_on[line_id], ','.join(label_sorted)))
+        if 0 == line_id % 10000:
+            LogUtil.log('INFO', '%d lines prediction done' % line_id)
+    rank_submit_f.close()
+
+    rank_submit_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
+    rank_submit_f = open(rank_submit_fp, 'w')
+    for p in test_preds:
+        rank_submit_f.write('%s\n' % ','.join([str(num) for num in p]))
+    rank_submit_f.close()
+
+    rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
+    rank_submit_ave_f = open(rank_submit_ave_fp, 'w')
+    for line_id, p in enumerate(vote_k_label):
+        label_sorted = [id2label[str(n)] for n in p[:5]]
+        rank_submit_ave_f.write("%s,%s\n" % (qid_on[line_id], ','.join(label_sorted)))
+        if 0 == line_id % 10000:
+            LogUtil.log('INFO', '%d lines prediction done' % line_id)
+    rank_submit_ave_f.close()
+
 
 
 if __name__ == "__main__":

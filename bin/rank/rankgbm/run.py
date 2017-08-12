@@ -256,6 +256,24 @@ def predict_online(config, models):
     rank_submit_ave_f.close()
 
 
+def tmp(config, argv):
+    version_id = config.get('RANK', 'version_id')
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'online')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
+
+    pre_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id)
+    test_preds = DataUtil.load_matrix(pre_fp, 'float')
+
+    rank_submit_fp = '%s/rank_id_score.online.%s.bak' % (config.get('DIRECTORY', 'pred_pt'), version_id)
+    rank_submit_f = open(rank_submit_fp, 'w')
+    for i in range(len(vote_k_label)):
+        rank_submit_f.write(','.join(['%s:%s' % (kv[0], kv[1]) for kv in zip(vote_k_label[i], test_preds[i])]) + '\n')
+    rank_submit_f.close()
 
 if __name__ == "__main__":
     config_fp = sys.argv[1]

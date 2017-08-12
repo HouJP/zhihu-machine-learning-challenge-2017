@@ -224,7 +224,7 @@ def predict_online(config, models):
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
     id2label = json.load(open(id2label_fp, 'r'))
 
-    rank_submit_fp = '%s/rank_submit.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
+    rank_submit_fp = '%s/rank_submit.online.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id)
     rank_submit_f = open(rank_submit_fp, 'w')
     for line_id, p in enumerate(preds_ids):
         label_sorted = [id2label[str(n)] for n in p[:5]]
@@ -233,13 +233,13 @@ def predict_online(config, models):
             LogUtil.log('INFO', '%d lines prediction done' % line_id)
     rank_submit_f.close()
 
-    rank_submit_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
+    rank_submit_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id)
     rank_submit_f = open(rank_submit_fp, 'w')
     for p in test_preds:
         rank_submit_f.write('%s\n' % ','.join([str(num) for num in p]))
     rank_submit_f.close()
 
-    rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'tmp_pt'), version_id)
+    rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id)
     rank_submit_ave_f = open(rank_submit_ave_fp, 'w')
     for line_id, p in enumerate(vote_k_label):
         label_sorted = [id2label[str(n)] for n in p[:5]]

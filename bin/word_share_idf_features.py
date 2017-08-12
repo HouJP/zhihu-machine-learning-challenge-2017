@@ -26,11 +26,15 @@ def generate_idf(config, argv):
         words = set(tw_off[line_id] + dw_off[line_id])
         for word in words:
             word_idf[word] = word_idf.get(word, 0) + 1
+        if line_id % 10000 == 0:
+            print '%s %d' % ('offline word', line_id)
 
     for line_id in range(len(qid_on)):
         words = set(tw_on[line_id] + dw_on[line_id])
         for word in words:
             word_idf[word] = word_idf.get(word, 0) + 1
+        if line_id % 10000 == 0:
+            print '%s %d' % ('online word', line_id)
 
     num_docs = len(qid_off) + len(qid_on)
     for word in word_idf:
@@ -47,11 +51,15 @@ def generate_idf(config, argv):
         chars = set(tc_off[line_id] + dc_off[line_id])
         for char in chars:
             char_idf[char] = char_idf.get(char, 0) + 1
+        if line_id % 10000 == 0:
+            print '%s %d' % ('offline char', line_id)
 
     for line_id in range(len(qid_on)):
         chars = set(tc_on[line_id] + dc_on[line_id])
         for char in chars:
             char_idf[char] = char_idf.get(char, 0) + 1
+        if line_id % 10000 == 0:
+            print '%s %d' % ('online char', line_id)
 
     for char in char_idf:
         char_idf[char] = math.log(num_docs / (char_idf[char] + 1.)) / math.log(2.)

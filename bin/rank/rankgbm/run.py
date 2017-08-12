@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-#! /usr/bin/python
+# ! /usr/bin/python
 
 import sys
 
@@ -7,7 +7,7 @@ reload(sys)
 sys.path.append("..")
 sys.setdefaultencoding('utf-8')
 
-import numpy as np  
+import numpy as np
 import ConfigParser
 import sys
 from ...utils import LogUtil, DataUtil
@@ -44,7 +44,8 @@ def load_rank_file(file_path):
     return instances
 
 
-def train(config, params):
+def train(config, params, argv):
+    fold_id = int(argv[0])
     '''
     针对`target_param`进行grid_search
     '''
@@ -81,35 +82,45 @@ def train(config, params):
     vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
     vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
 
-    train_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold0_train.rank'
+    train_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold%d_train.rank' % fold_id
     train_instances = load_rank_file(train_file_name)
 
-    valid_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold0_valid.rank'
+    valid_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold%d_valid.rank' % fold_id
     valid_instances = load_rank_file(valid_file_name)
 
-    valid_Xs = np.array([ valid_instances[i][2] for i in range (len(valid_instances))])
+    valid_Xs = np.array([valid_instances[i][2] for i in range(len(valid_instances))])
 
     # 训练模型
-    rank_gbm = RankGBM(n_round = params['n_round'],
-        max_depth = params['max_depth'],
-        max_features = params['max_features'],
-        min_samples_leaf = params['min_samples_leaf'],
-        learn_rate = params['learn_rate'],
-        silent = params['silent'])
+    rank_gbm = RankGBM(vote_k,
+                       n_round=params['n_round'],
+                       max_depth=params['max_depth'],
+                       max_features=params['max_features'],
+                       min_samples_leaf=params['min_samples_leaf'],
+                       learn_rate=params['learn_rate'],
+                       silent=params['silent'])
     rank_gbm.fit(train_instances, {"vali": valid_instances})
     # 对预测数据进行预测
-    valid_preds1 = rank_gbm.predict(valid_Xs)
-    valid_preds1 = zip(*[iter(valid_preds1)] * vote_k)
+    valid_preds = rank_gbm.predict(valid_Xs)
+    valid_preds = zip(*[iter(valid_preds)] * vote_k)
 
-    preds_ids1 = list()
-    vote_k_label1 = [vote_k_label[iid] for iid in ins_p3_indexs]
-    for i in range(len(vote_k_label1)):
-        preds_ids1.append(
-            [kv[0] for kv in sorted(zip(vote_k_label1[i], valid_preds1[i]), key=lambda x: x[1], reverse=True)])
-    valid_labels1 = [all_valid_labels[iid] for iid in ins_p3_indexs]
+    if 0 == fold_id:
+        ins_indexs = ins_p3_indexs
+    elif 1 == fold_id:
+        ins_indexs = ins_p1_indexs
+    elif 2 == fold_id:
+        ins_indexs = ins_p2_indexs
+    else:
+        ins_indexs = None
+
+    valid_preds_ids = list()
+    valid_vote_k_label = [vote_k_label[iid] for iid in ins_indexs]
+    for i in range(len(valid_vote_k_label)):
+        valid_preds_ids.append(
+            [kv[0] for kv in sorted(zip(valid_vote_k_label[i], valid_preds[i]), key=lambda x: x[1], reverse=True)])
+    valid_labels = [all_valid_labels[iid] for iid in ins_indexs]
 
     LogUtil.log('INFO', '------------ fold1 score ---------------')
-    F_by_ids(preds_ids1, valid_labels1)
+    F_by_ids(valid_preds_ids, valid_labels)
 
 
 if __name__ == "__main__":
@@ -119,5 +130,6 @@ if __name__ == "__main__":
     func = sys.argv[2]
     argv = sys.argv[3:]
 
-    params = {'n_round' : 100, 'max_depth' : 8, 'max_features' : 0.6, 'min_samples_leaf' : 70, 'learn_rate' : 0.2, 'silent' : False}
-    train(config, params)
+    params = {'n_round': 100, 'max_depth': 8, 'max_features': 0.6, 'min_samples_leaf': 70, 'learn_rate': 0.2,
+              'silent': False}
+    train(config, params, argv)

@@ -16,13 +16,27 @@ from sklearn.externals import joblib
 from sklearn import linear_model
 from ...utils import LogUtil
 from rankevaluation import RankEvaluation
+from ...evaluation import F_by_ids
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
+
+def self_define_f(preds, labels, vote_k):
+    labels = zip(*[iter(list(labels))] * vote_k)
+    preds = zip(*[iter(preds)] * vote_k)
+
+    preds_ids = list()
+    for i in range(len(preds)):
+        preds_ids.append(
+            [kv[0] for kv in sorted(enumerate(preds[i]), key=lambda x: x[1], reverse=True)])
+
+    return F_by_ids(preds_ids, labels)
+
+
 class RankGBM(object):
 
-    def __init__(self, n_round = 100, max_depth = 5, max_features = "auto", min_samples_leaf = 0.025, learn_rate = 0.2, silent = True):
+    def __init__(self, vote_k, n_round = 100, max_depth = 5, max_features = "auto", min_samples_leaf = 0.025, learn_rate = 0.2, silent = True):
         '''
         初始化模型参数
         '''
@@ -36,6 +50,7 @@ class RankGBM(object):
         self.min_samples_leaf = min_samples_leaf
         self.learn_rate = learn_rate
         # 数据信息
+        self.vote_k = vote_k
         self.n_instances = 0
         self.qids = []
         self.n_qids = 0
@@ -78,6 +93,11 @@ class RankGBM(object):
         watch_window_qid2did = {}
         for dataset_name in watch_window:
             watch_window_qid2did[dataset_name] = self.build_qid2did(watch_window[dataset_name])
+        # 监视窗口生成标签向量
+        watch_window_label = {}
+        for dataset_name in watch_window:
+            watch_window_label[dataset_name] = [ watch_window[dataset_name][i][0] for i in range(len(watch_window[dataset_name])) ]
+
         # Early Stop监视
         best_iter = 0
         best_em = 0.0
@@ -108,6 +128,7 @@ class RankGBM(object):
 
             vali_map = RankEvaluation.map(watch_window['vali'], watch_window_fs['vali'], watch_window_qid2did['vali'])
             vali_ndcg10 = RankEvaluation.ave_ndcg(watch_window['vali'], watch_window_fs['vali'], watch_window_qid2did['vali'], 10)
+            valid_f = self_define_f(watch_window_fs['vali'], watch_window_label['vali'], self.vote_k)
             LogUtil.log("INFO", "vali\tMAP(%.4f)\tNDCG@10(%.4f)" % (vali_map, vali_ndcg10))
             # Early Stop逻辑
             if (vali_map + vali_ndcg10 > best_em):

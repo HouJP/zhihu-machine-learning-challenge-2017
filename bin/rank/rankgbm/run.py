@@ -195,6 +195,12 @@ def predict_online(config, models):
     LogUtil.log('INFO', '------------ rank score ---------------')
     F_by_ids(preds_ids, all_valid_labels)
 
+    valid_preds_file = open('%s/rank_id_score.validation.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id), 'w')
+    for i in range(len(vote_k_label)):
+        valid_preds_file.write(','.join(['%s:%s' % (kv[0], kv[1]) for kv in zip(vote_k_label[i], valid_preds[i])]) + '\n')
+    valid_preds_file.close()
+
+
     test_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.test.rank'
     test_instances = load_rank_file(test_file_name)
     test_Xs = np.array([test_instances[i][2] for i in range(len(test_instances))])
@@ -234,10 +240,10 @@ def predict_online(config, models):
             LogUtil.log('INFO', '%d lines prediction done' % line_id)
     rank_submit_f.close()
 
-    rank_submit_fp = '%s/rank_all.online.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id)
+    rank_submit_fp = '%s/rank_id_score.online.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id)
     rank_submit_f = open(rank_submit_fp, 'w')
-    for p in test_preds:
-        rank_submit_f.write('%s\n' % ','.join([str(num) for num in p]))
+    for i in range(len(vote_k_label)):
+        rank_submit_f.write(','.join(['%s:%s' % (kv[0], kv[1]) for kv in zip(vote_k_label[i], test_preds[i])]) + '\n')
     rank_submit_f.close()
 
     rank_submit_ave_fp = '%s/rank_ave.online.%s' % (config.get('DIRECTORY', 'pred_pt'), version_id)

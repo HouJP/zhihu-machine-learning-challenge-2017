@@ -50,6 +50,9 @@ def generate_offline(config, argv):
     all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
                          '' != fn.strip()]
 
+    feature_names_md5 = hashlib.md5('|'.join(all_feature_names)).hexdigest()
+    LogUtil.log('INFO', 'feature_names_md5=%s' % feature_names_md5)
+
     # pair_feature_names = config.get('RANK', 'pair_features').split()
 
     # load feature matrix
@@ -93,8 +96,8 @@ def generate_offline(config, argv):
     train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
     valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
 
-    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id)
-    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id)
+    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id, feature_names_md5)
+    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id, feature_names_md5)
 
     # ========================= fold 1 =========================================
 
@@ -108,8 +111,8 @@ def generate_offline(config, argv):
     train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
     valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
 
-    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id)
-    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id)
+    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id, feature_names_md5)
+    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id, feature_names_md5)
 
     # ========================= fold 2 =========================================
 
@@ -123,8 +126,8 @@ def generate_offline(config, argv):
     train_features, train_labels, _ = Runner._generate_data(rank_train_indexs, offline_labels, offline_features, -1)
     valid_features, valid_labels, _ = Runner._generate_data(rank_valid_indexs, offline_labels, offline_features, -1)
 
-    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id)
-    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id)
+    save_rank(config, train_labels, train_features, 'fold%d_train' % fold_id, feature_names_md5)
+    save_rank(config, valid_labels, valid_features, 'fold%d_valid' % fold_id, feature_names_md5)
 
 
 def generate_online(config, argv):
@@ -148,6 +151,8 @@ def generate_online(config, argv):
     all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
                          '' != fn.strip()]
 
+    feature_names_md5 = hashlib.md5('|'.join(all_feature_names)).hexdigest()
+
     # pair_feature_names = config.get('RANK', 'pair_features').split()
 
     # load feature matrix
@@ -166,24 +171,23 @@ def generate_online(config, argv):
 
     test_features, test_labels, _ = Runner._generate_data(range(len(online_labels)), online_labels, online_features, -1)
 
-    save_rank(config, test_labels, test_features, 'test')
+    save_rank(config, test_labels, test_features, 'test', feature_names_md5)
 
 
-def save_rank(config, labels, features, data_name):
-    vote_feature_names = config.get('RANK', 'vote_features').split()
-    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+def save_rank(config, labels, features, data_name, feature_names_md5):
     vote_k = config.getint('RANK', 'vote_k')
 
     file_path = '%s/featwheel_vote_%d_%s.%s.rank' % (config.get('DIRECTORY', 'dataset_pt'),
-                                                                     vote_k,
-                                                                     vote_k_label_file_name,
-                                                                     data_name)
+                                                     vote_k,
+                                                     feature_names_md5,
+                                                     data_name)
 
     f = open(file_path, 'w')
     for lid in range(len(labels)):
         f.write('%d qid:%d %s\n' % (labels[lid], lid / vote_k, ' '.join(
             ['%d:%s' % (kv[0], kv[1]) for kv in enumerate(features[lid].toarray().tolist()[0])])))
     f.close()
+    LogUtil.log('INFO', 'save %s done' % file_path)
 
 
 if __name__ == '__main__':

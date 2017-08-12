@@ -76,6 +76,25 @@ def train(config, argv):
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
 
+    # load feture names
+    model_feature_names = list(set(config.get('RANK', 'model_features').split()))
+    model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           model_feature_names]
+
+    instance_feature_names = config.get('RANK', 'instance_features').split()
+    instance_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                              instance_feature_names]
+
+    topic_feature_names = config.get('RANK', 'topic_features').split()
+    topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           topic_feature_names]
+
+    all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
+                         '' != fn.strip()]
+
+    feature_names_md5 = hashlib.md5('|'.join(all_feature_names)).hexdigest()
+    LogUtil.log('INFO', 'feature_names_md5=%s' % feature_names_md5)
+
     # load rank train + valid dataset index
     valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
                                               config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
@@ -107,13 +126,13 @@ def train(config, argv):
 
     train_file_name = '%s/featwheel_vote_%d_%s.fold%d_train.rank' % (config.get('DIRECTORY', 'dataset_pt'),
                                                                      vote_k,
-                                                                     vote_k_label_file_name,
+                                                                     feature_names_md5,
                                                                      fold_id)
     train_instances = load_rank_file(train_file_name)
 
     valid_file_name = '%s/featwheel_vote_%d_%s.fold%d_valid.rank' % (config.get('DIRECTORY', 'dataset_pt'),
                                                                      vote_k,
-                                                                     vote_k_label_file_name,
+                                                                     feature_names_md5,
                                                                      fold_id)
     valid_instances = load_rank_file(valid_file_name)
 
@@ -167,9 +186,31 @@ def predict_online(config, models):
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
 
+    # load feture names
+    model_feature_names = list(set(config.get('RANK', 'model_features').split()))
+    model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           model_feature_names]
+
+    instance_feature_names = config.get('RANK', 'instance_features').split()
+    instance_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                              instance_feature_names]
+
+    topic_feature_names = config.get('RANK', 'topic_features').split()
+    topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           topic_feature_names]
+
+    all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
+                         '' != fn.strip()]
+
+    feature_names_md5 = hashlib.md5('|'.join(all_feature_names)).hexdigest()
+    LogUtil.log('INFO', 'feature_names_md5=%s' % feature_names_md5)
+
     valid_preds = [0, 0, 0]
     for fold_id in range(3):
-        valid_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.fold%d_valid.rank' % fold_id
+        valid_file_name = '%s/featwheel_vote_%d_%s.fold%d_valid.rank' % (config.get('DIRECTORY', 'dataset_pt'),
+                                                                         vote_k,
+                                                                         feature_names_md5,
+                                                                         fold_id)
         valid_instances = load_rank_file(valid_file_name)
 
         valid_Xs = np.array([valid_instances[i][2] for i in range(len(valid_instances))])
@@ -207,7 +248,9 @@ def predict_online(config, models):
             ','.join(['%s:%s' % (kv[0], kv[1]) for kv in zip(vote_k_label[i], valid_preds[i])]) + '\n')
     valid_preds_file.close()
 
-    test_file_name = '/mnt/disk2/xinyu/data/dataset/featwheel_vote_10_fe90ef2ad1a5f75899b6653ce822831b.test.rank'
+    test_file_name = '%s/featwheel_vote_%d_%s.test.rank' % (config.get('DIRECTORY', 'dataset_pt'),
+                                                            vote_k,
+                                                            feature_names_md5)
     test_instances = load_rank_file(test_file_name)
     test_Xs = np.array([test_instances[i][2] for i in range(len(test_instances))])
 

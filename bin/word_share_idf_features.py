@@ -46,6 +46,11 @@ def generate(config, argv):
         word_idf = json.load(word_idf_f)
     LogUtil.log("INFO", "load word_idf done, len(word_idf)=%d" % len(word_idf))
 
+    char_idf_fp = '%s/chars.idf' % config.get('DIRECTORY', 'devel_pt')
+    with open(char_idf_fp, 'r') as char_idf_f:
+        char_idf = json.load(char_idf_f)
+    LogUtil.log("INFO", "load char_idf done, len(char_idf)=%d" % len(char_idf))
+
     # load valid dataset index
     valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
                                               config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
@@ -73,6 +78,12 @@ def generate(config, argv):
     pair_dws_idf_feature_fp = '%s/pair_content_word_share_idf.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), data_name)
     pair_dws_idf_feature_f = open(pair_dws_idf_feature_fp, 'w')
 
+    pair_tcs_idf_feature_file_path = '%s/pair_title_char_share_idf.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), data_name)
+    pair_tcs_idf_feature_file = open(pair_tcs_idf_feature_file_path, 'w')
+
+    pair_dcs_idf_feature_fp = '%s/pair_content_char_share_idf.%s.csv' % (config.get('DIRECTORY', 'dataset_pt'), data_name)
+    pair_dcs_idf_feature_f = open(pair_dcs_idf_feature_fp, 'w')
+
     # feature_file.write('%d %d\n' % (len(source_data), 4))
     line_id = 0
     for line in source_data:
@@ -95,12 +106,32 @@ def generate(config, argv):
             dw_features.append(agg)
         pair_dws_idf_feature_f.write(','.join([str(num) for num in dw_features]) + '\n')
 
+        tc_features = list()
+        for tid in range(1999):
+            agg = 0.
+            for char in tc:
+                if char in topic_tc[tid] and len(char):
+                    agg += char_idf[char]
+            tc_features.append(agg)
+        pair_tcs_idf_feature_file.write(','.join([str(num) for num in tc_features]) + '\n')
+
+        dc_features = list()
+        for tid in range(1999):
+            agg = 0.
+            for char in dc:
+                if char in topic_dc[tid] and len(char):
+                    agg += char_idf[char]
+            dc_features.append(agg)
+        pair_dcs_idf_feature_f.write(','.join([str(num) for num in dc_features]) + '\n')
+
         if 0 == line_id % 10000:
             LogUtil.log('INFO', str(line_id))
         line_id += 1
 
     pair_tws_idf_feature_file.close()
     pair_dws_idf_feature_f.close()
+    pair_tcs_idf_feature_file.close()
+    pair_dcs_idf_feature_f.close()
 
 
 def generate_idf(config, argv):

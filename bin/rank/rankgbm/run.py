@@ -18,6 +18,7 @@ import hashlib
 from rankgbm import RankGBM
 import time
 import os
+import math
 
 
 def get_all_feature_names(config):
@@ -84,6 +85,8 @@ def load_rank_file(file_path):
             [k, v] = subs[i].split(':')
             fid = int(k)
             fvalue = float(v)
+            if math.isnan(fvalue) or math.isinf(fvalue):
+                fvalue = 0.
             while len(features) <= fid:
                 features.append(0.0)
             features[fid] = fvalue

@@ -20,6 +20,32 @@ import time
 import os
 
 
+def get_all_feature_names(config):
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+
+    # load feture names
+    model_feature_names = config.get('RANK', 'model_features').split()
+    model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           model_feature_names]
+
+    instance_feature_names = config.get('RANK', 'instance_features').split()
+    instance_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                              instance_feature_names]
+
+    topic_feature_names = config.get('RANK', 'topic_features').split()
+    topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
+                           topic_feature_names]
+
+    all_feature_names = list()
+    for fn in (model_feature_names + instance_feature_names + topic_feature_names):
+        if len(fn) and (fn not in all_feature_names):
+            all_feature_names.append(fn)
+
+    return all_feature_names
+
+
 def init_out_dir(config, out_tag):
     # generate output tag
     # out_tag = time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime(time.time()))
@@ -76,21 +102,7 @@ def train(config, argv):
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
 
-    # load feture names
-    model_feature_names = list(set(config.get('RANK', 'model_features').split()))
-    model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
-                           model_feature_names]
-
-    instance_feature_names = config.get('RANK', 'instance_features').split()
-    instance_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
-                              instance_feature_names]
-
-    topic_feature_names = config.get('RANK', 'topic_features').split()
-    topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
-                           topic_feature_names]
-
-    all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
-                         '' != fn.strip()]
+    all_feature_names = get_all_feature_names(config)
 
     feature_names_md5 = hashlib.md5('|'.join(all_feature_names)).hexdigest()
     LogUtil.log('INFO', 'feature_names_md5=%s' % feature_names_md5)
@@ -186,21 +198,7 @@ def predict_online(config, models):
     vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
     vote_k = config.getint('RANK', 'vote_k')
 
-    # load feture names
-    model_feature_names = list(set(config.get('RANK', 'model_features').split()))
-    model_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
-                           model_feature_names]
-
-    instance_feature_names = config.get('RANK', 'instance_features').split()
-    instance_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
-                              instance_feature_names]
-
-    topic_feature_names = config.get('RANK', 'topic_features').split()
-    topic_feature_names = ['featwheel_vote_%d_%s_%s' % (vote_k, vote_k_label_file_name, fn) for fn in
-                           topic_feature_names]
-
-    all_feature_names = [fn for fn in (model_feature_names + instance_feature_names + topic_feature_names) if
-                         '' != fn.strip()]
+    all_feature_names = get_all_feature_names(config)
 
     feature_names_md5 = hashlib.md5('|'.join(all_feature_names)).hexdigest()
     LogUtil.log('INFO', 'feature_names_md5=%s' % feature_names_md5)

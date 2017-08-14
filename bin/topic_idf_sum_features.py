@@ -44,11 +44,11 @@ def generate(config, argv):
         dc = dc_list[line_id]
         dw = dw_list[line_id]
 
-        feature.append(sum([char_idf[char] for char in tc if len(char) > 0]))
-        feature.append(sum([word_idf[word] for word in tw if len(word) > 0]))
+        feature.append(sum([char_idf[char] for char in tc if len(char) > 0 and char in char_idf]))
+        feature.append(sum([word_idf[word] for word in tw if len(word) > 0 and word in word_idf]))
 
-        feature.append(sum([char_idf[char] for char in dc if len(char) > 0]))
-        feature.append(sum([word_idf[word] for word in dw if len(word) > 0]))
+        feature.append(sum([char_idf[char] for char in dc if len(char) > 0 and char in char_idf]))
+        feature.append(sum([word_idf[word] for word in dw if len(word) > 0 and word in word_idf]))
 
         label_id = int(label2id[tid_list[line_id]])
         features[label_id] = feature

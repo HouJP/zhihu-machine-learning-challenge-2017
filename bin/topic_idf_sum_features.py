@@ -32,7 +32,7 @@ def generate(config, argv):
     label2id_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'label2id_fn'))
     label2id = json.load(open(label2id_fp, 'r'))
 
-    feature_file_path = '%s/topic_fs_length.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), 'all')
+    feature_file_path = '%s/topic_fs_idf_sum.%s.smat' % (config.get('DIRECTORY', 'dataset_pt'), 'all')
     feature_file = open(feature_file_path, 'w')
     features = [0] * len(tid_list)
 

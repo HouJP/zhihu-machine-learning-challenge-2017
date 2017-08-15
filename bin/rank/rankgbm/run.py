@@ -308,6 +308,56 @@ def predict_online(config, models):
     rank_submit_ave_f.close()
 
 
+def ave(config, argv):
+    valid_row_size = 100000
+    valid_col_size = 10
+    valid_preds = list()
+    for i in range(valid_row_size):
+        vec = [0.] * valid_col_size
+        valid_preds.append(vec)
+
+    paths = argv[0]
+    paths = paths.split(',')
+    for path in paths:
+        f = open(path, 'r')
+        lid = 0
+        for line in f:
+            subs = line.split(',')
+            for pid, kv in enumerate(subs):
+                valid_preds[lid][pid] += float(kv.split(':')[1])
+            lid += 1
+        f.close()
+
+    version_id = config.get('RANK', 'version_id')
+    vote_feature_names = config.get('RANK', 'vote_features').split()
+    vote_k_label_file_name = hashlib.md5('|'.join(vote_feature_names)).hexdigest()
+    vote_k = config.getint('RANK', 'vote_k')
+
+    # load rank train + valid dataset index
+    valid_index_fp = '%s/%s.offline.index' % (config.get('DIRECTORY', 'index_pt'),
+                                              config.get('TITLE_CONTENT_CNN', 'valid_index_offline_fn'))
+    valid_index = DataUtil.load_vector(valid_index_fp, 'int')
+    valid_index = [num - 1 for num in valid_index]
+
+    # load topk ids
+    index_pt = config.get('DIRECTORY', 'index_pt')
+    vote_k_label_fp = '%s/vote_%d_label_%s.%s.index' % (index_pt, vote_k, vote_k_label_file_name, 'offline')
+    vote_k_label = DataUtil.load_matrix(vote_k_label_fp, 'int')
+
+    # load labels
+    all_valid_labels = load_labels_from_file(config, 'offline', valid_index).tolist()
+
+    preds_ids = list()
+    for i in range(len(vote_k_label)):
+        preds_ids.append(
+            [kv[0] for kv in sorted(zip(vote_k_label[i], valid_preds[i]), key=lambda x: x[1], reverse=True)])
+
+    LogUtil.log('INFO', '------------ vote score ---------------')
+    F_by_ids(vote_k_label, all_valid_labels)
+    LogUtil.log('INFO', '------------ rank score ---------------')
+    F_by_ids(preds_ids, all_valid_labels)
+
+
 def tmp(config, argv):
     version_id = config.get('RANK', 'version_id')
     vote_feature_names = config.get('RANK', 'vote_features').split()

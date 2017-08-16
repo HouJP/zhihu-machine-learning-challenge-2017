@@ -1,7 +1,7 @@
 ****
 
 #	<center>Zhihu Machine Learning Challenge 2017</center>
-##### <center>Author: Liang Pang, Yixing Fan, Jianpeng Hou, Xinyu Yue, Guocheng Niu</center>
+##### <center>Author: Liang Pang, Guocheng Niu, Jianpeng Hou</center>
 
 ****
 

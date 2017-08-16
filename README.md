@@ -1,6 +1,6 @@
 ****
 
-#	<center>Zhihu Machine Learning Challenge 2017</center>
+#	<center>Zhihu Machine Learning Challenge 2017 (Comming Soon)</center>
 ##### <center>Author: Liang Pang, Guocheng Niu, Jianpeng Hou</center>
 
 ****

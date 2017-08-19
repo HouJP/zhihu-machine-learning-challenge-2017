@@ -27,14 +27,19 @@ In the first stage, we can get the DL model prediction results for each <instanc
 The above description can be done by the following steps:
 
 1. Enter root directory of the project:
+	
+	```shell
+	cd zhihu-machine-learning-challenge-2017/
+	```
 
-		cd zhihu-machine-learning-challenge-2017/
+2. Vote for offline dataset and online dataset:
 
-1. Vote for offline dataset and online dataset:
+	```shell
+	python -m bin.rank.vote conf/rank_v29.conf vote offline
+	python -m bin.rank.vote conf/rank_v29.conf vote online
+	```
 
-		python -m bin.rank.vote conf/rank_v29.conf vote offline
-		python -m bin.rank.vote conf/rank_v29.conf vote online
-2. Generate features for offline dataset and online dataset:
+3. Generate features for offline dataset and online dataset:
 
 		# generate <instance, topic> pair features
 		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_model offline

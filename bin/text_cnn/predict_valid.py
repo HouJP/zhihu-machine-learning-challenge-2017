@@ -16,6 +16,7 @@ import math, heapq
 from ..utils import LogUtil, DataUtil
 from bin.text_cnn.data_helpers import load_embedding
 import data_helpers
+from .clayers.Scale import Scale
 
 
 def extract_data(regex, content, index=1):
@@ -70,7 +71,7 @@ def predict_val(config, part_id):
         json_file = open('%s.json' % model_fp, 'r')
         model_json = json_file.read()
         json_file.close()
-        model = model_from_json(model_json)
+        model = model_from_json(model_json, {'Scale':Scale})
         # load weights into new model
         model.load_weights('%s.h5' % model_fp)
         LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)

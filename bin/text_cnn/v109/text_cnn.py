@@ -20,7 +20,6 @@ from keras import backend as K
 from bin.utils import LogUtil
 from bin.text_cnn.loss import binary_crossentropy_sum
 from bin.text_cnn.data_helpers import load_embedding
-from keras.utils.vis_utils import plot_model 
 
 
 def init_text_cnn(config):
@@ -170,8 +169,6 @@ class TitleContentCNN(object):
             optimizer = None
         self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
         self._model.summary()
-        #plot_model(self._model, to_file='model_101.pdf', show_shapes=True, show_layer_names=False) 
-        #exit(0)
 
     def save(self, model_fp):
         model_json = self._model.to_json()

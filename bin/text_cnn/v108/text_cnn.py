@@ -18,9 +18,8 @@ import tensorflow as tf
 from keras import backend as K
 
 from bin.utils import LogUtil
-from bin.text_cnn.loss import binary_crossentropy_sum
+from bin.text_cnn.loss import *
 from bin.text_cnn.data_helpers import load_embedding
-from keras.utils.vis_utils import plot_model 
 
 
 def init_text_cnn(config):
@@ -168,10 +167,10 @@ class TitleContentCNN(object):
             optimizer = optimizers.Adam(lr=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
         else:
             optimizer = None
-        self._model.compile(loss=binary_crossentropy_sum, optimizer=optimizer, metrics=metrics)
+        #self._model.compile(loss=logloss_with_2side_top_pn(top_k_pos = 5, top_k_neg = 20), optimizer=optimizer, metrics=metrics)
+        self._model.compile(loss='categorical_crossentropy', optimizer=optimizer, metrics=metrics)
         self._model.summary()
-        #plot_model(self._model, to_file='model_101.pdf', show_shapes=True, show_layer_names=False) 
-        #exit(0)
+        self._model.load_weights('/home/pangliang/houjp/zhihu-machine-learning-challenge-2017/data/pretrained/text_cnn_v101_519.h5')
 
     def save(self, model_fp):
         model_json = self._model.to_json()

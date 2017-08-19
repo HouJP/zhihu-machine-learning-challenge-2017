@@ -11,6 +11,8 @@ import sys
 
 from data_helpers import *
 from ..utils import DataUtil
+from .clayers.Scale import Scale
+from keras.models import model_from_json
 
 
 def save_prediction(pred_fp, preds, id2label, que_ids_test):
@@ -49,9 +51,19 @@ def predict_test(config, part_id):
     id2label_fp = '%s/%s' % (config.get('DIRECTORY', 'hash_pt'), config.get('TITLE_CONTENT_CNN', 'id2label_fn'))
     id2label = json.load(open(id2label_fp, 'r'))
 
+    ### load model
+    ##model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
+    ##model.load(model_fp, {'Scale':Scale})
     # load model
     model_fp = config.get('DIRECTORY', 'model_pt') + 'text_cnn_%03d' % part_id
-    model.load(model_fp)
+    # load json and create model
+    json_file = open('%s.json' % model_fp, 'r')
+    model_json = json_file.read()
+    json_file.close()
+    model = model_from_json(model_json, {'Scale':Scale})
+    # load weights into new model
+    model.load_weights('%s.h5' % model_fp)
+    LogUtil.log('INFO', 'load model (%s) from disk done' % model_fp)
 
     # load test data set
     test_dataset = data_loader.load_dataset_from_file(config,

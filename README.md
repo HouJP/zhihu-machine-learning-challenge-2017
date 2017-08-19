@@ -13,7 +13,7 @@
 
 ##	<a name="Abstract"> Abstract </a>
 
-In the **Zhihu Machine Learning Challenge 2017**, we were asked to build a model to automaticly and accurately tag topics for Zhihu contents. Our final submission was a 2-stage process and scored **0.43436** on Public LB and **0.43273** on Private LB, **ranking 3rd** out of all teams. This documents describes our team's solution which can be dived into two parts: 
+In the **Zhihu Machine Learning Challenge 2017**, we were asked to build a model to automaticly and accurately tag topics for Zhihu contents. Our final submission was a 2-stage process and scored **0.43436** on Public LB and **0.43273** on Private LB, **ranking 3rd** out of all teams. This documents describes our team's solution which can be dived into two parts:
 
 1. Deep Learning: build variance DL models to sort all topics.
 2. Learning To Rank: build RankGBM model to sort ten of most possible topics.
@@ -45,4 +45,3 @@ The above description can be done by the following steps:
 		# generate <topic> features
 		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_topic offline
 		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_topic online
-		

@@ -41,12 +41,38 @@ The above description can be done by the following steps:
 
 3. Generate features for offline dataset and online dataset:
 
-		# generate <instance, topic> pair features
-		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_model offline
-		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_model online
-		# generate <instance> features
-		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_instance offline
-		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_instance online
-		# generate <topic> features
-		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_topic offline
-		python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_topic online
+	```shell
+	# generate <instance, topic> pair features
+	python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_model offline
+	python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_model online
+	# generate <instance> features
+	python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_instance offline
+	python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_instance online
+	# generate <topic> features
+	python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_topic offline
+	python -m bin.rank.feature conf/rank_v29.conf generate_featwheel_feature_from_topic online
+	```
+
+4. Generate rank data files for offline dataset and online dataset:
+
+	```shell
+	python -m bin.rank.rankgbm.rank_data conf/rank_v29.conf generate_offline
+	python -m bin.rank.rankgbm.rank_data conf/rank_v29.conf generate_online
+	```
+	
+5. train a RankGBM model based on offline dataset and predict for online dataset:
+
+	```shell
+	# 3-fold cross validation
+	python -m bin.rank.rankgbm.run conf/rank_v29.conf train 0 rank_v29
+	python -m bin.rank.rankgbm.run conf/rank_v29.conf train 1 rank_v29
+	python -m bin.rank.rankgbm.run conf/rank_v29.conf train 2 rank_v29
+	# predict for online dataset
+	python -m bin.rank.rankgbm.run out/rank_v29/conf/featwheel.conf test
+	```
+	
+6. Finally, you can get a submit file here:
+
+	```shell
+	vim out/rank_v29/pred/rank_submit.online.29
+	```
